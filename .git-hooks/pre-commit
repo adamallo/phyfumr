@@ -6,4 +6,6 @@ if git diff --cached --name-only | grep -q 'R/prior_default_settings.R'; then
     echo "make_prior_default_settings.R failed. Commit aborted."
     exit 1
   }
+else
+  echo "default_prior_settings.rda did not need to be rebuilt"
 fi
