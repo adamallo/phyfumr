@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+if git diff --cached --name-only | grep -q 'R/priorSettings-def.R'; then
+  echo "Rebuilding priorSettings.rda..."
+  Rscript data-raw/make_priorSettings.R || {
+    echo "make_priorSettings.R failed. Commit aborted."
+    exit 1
+  }
+fi
