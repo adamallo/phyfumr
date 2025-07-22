@@ -8,6 +8,3 @@ if (!file.exists(hash_file) || readLines(hash_file) != hash) {
   usethis::use_data(default_prior_settings, overwrite = TRUE)
   writeLines(hash, hash_file)
 }
-
-# Save it as a dataset
-usethis::use_data(default_prior_settings, overwrite = TRUE)
