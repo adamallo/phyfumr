@@ -101,7 +101,7 @@ an_support_above <- function(dfun, qfun, d, support = c(-Inf, Inf), tol = 1e-8) 
 
   # Get quantile limits from support
   p_lower <- if (is.finite(support[1])) suppressWarnings(
-    stats::uniroot(function(p) qfun(p) - auto_support[1],
+    uniroot(function(p) qfun(p) - auto_support[1],
             interval = c(tol, 1 - tol))$root
   ) else tol
 
@@ -197,7 +197,7 @@ is_dispersion_comparable_e_a <- function(x,dfun,qfun,prob=0.95,support = c(-Inf,
   )
 
   #Maximal analytical density of the reference distribution
-  ref_mode <- stats::optimize(function(x) -dfun(x), interval = auto_support)$minimum
+  ref_mode <- optimize(function(x) -dfun(x), interval = auto_support)$minimum
   d_ref_mode <- dfun(ref_mode)
 
   return(d_ref_mode >= d)

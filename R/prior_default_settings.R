@@ -13,7 +13,7 @@
 #' @returns the quantile of the half Student's T with p = p
 
 qhalft <- function(p, nu, scale) {
-  scale * stats::qt((p + 1) / 2, nu)
+  scale * qt((p + 1) / 2, nu)
 }
 
 #' Prior Settings
@@ -57,152 +57,152 @@ default_prior_settings <- list(
       params = list(nu = 1.5, scale = 0.13)
     ),
     flipflop.MDbias = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 0, sdlog = 1)
     ),
     flipflop.rlambda = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 3, sdlog = 1.5)
     ),
     errorModel.kappaScale = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 4.56, sdlog = 0.3)
     ),
     errorModel.etaOffset = list(
-      dfun = "stats::dbeta",
-      qfun = "stats::qbeta",
+      dfun = "dbeta",
+      qfun = "qbeta",
       params = list(shape1 = 95, shape2 = 5)
     ),
     errorModel.deltaOffset = list(
-      dfun = "stats::dbeta",
-      qfun = "stats::qbeta",
+      dfun = "dbeta",
+      qfun = "qbeta",
       params = list(shape1 = 5, shape2 = 95)
     ),
     luca.branch = list(
-      dfun = "stats::dunif",
-      qfun = "stats::qunif",
+      dfun = "dunif",
+      qfun = "qunif",
       params = list(min = 0, max = Inf)
     ),
     constant.popSize = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 2.298218, sdlog = 2.148)
     )
   ),
   L = list(
     flipflop.lambda = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 2.077, sdlog = 0.672)
     ),
     flipflop.mu = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = -2.528, sdlog = 0.672)
     ),
     clock.rate = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = -2.528, sdlog = 0.672)
     ),
     flipflop.gamma = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = -2.528, sdlog = 0.672)
     ),
     flipflop.MDbias = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 0, sdlog = 1)
     ),
     flipflop.rlambda = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 3, sdlog = 1.5)
     ),
     errorModel.kappaScale = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 4.56, sdlog = 0.3)
     ),
     errorModel.etaOffset = list(
-      dfun = "stats::dbeta",
-      qfun = "stats::qbeta",
+      dfun = "dbeta",
+      qfun = "qbeta",
       params = list(shape1 = 95, shape2 = 5)
     ),
     errorModel.deltaOffset = list(
-      dfun = "stats::dbeta",
-      qfun = "stats::qbeta",
+      dfun = "dbeta",
+      qfun = "qbeta",
       params = list(shape1 = 5, shape2 = 95)
     ),
     luca.branch = list(
-      dfun = "stats::dunif",
-      qfun = "stats::qunif",
+      dfun = "dunif",
+      qfun = "qunif",
       params = list(min = 0, max = Inf)
     ),
     constant.popSize = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 2.298218, sdlog = 2.148)
     )
   ),
   H = list(
     flipflop.lambda = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = -0.770, sdlog = 1.241)
     ),
     flipflop.mu = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = -3.835, sdlog = 1.241)
     ),
     clock.rate = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = -3.835, sdlog = 1.241)
     ),
     flipflop.gamma = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = -3.835, sdlog = 1.241)
     ),
     flipflop.MDbias = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 0, sdlog = 1)
     ),
     flipflop.rlambda = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 3, sdlog = 1.5)
     ),
     errorModel.kappaScale = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 4.56, sdlog = 0.3)
     ),
     errorModel.etaOffset = list(
-      dfun = "stats::dbeta",
-      qfun = "stats::qbeta",
+      dfun = "dbeta",
+      qfun = "qbeta",
       params = list(shape1 = 95, shape2 = 5)
     ),
     errorModel.deltaOffset = list(
-      dfun = "stats::dbeta",
-      qfun = "stats::qbeta",
+      dfun = "dbeta",
+      qfun = "qbeta",
       params = list(shape1 = 5, shape2 = 95)
     ),
     luca.branch = list(
-      dfun = "stats::dunif",
-      qfun = "stats::qunif",
+      dfun = "dunif",
+      qfun = "qunif",
       params = list(min = 0, max = Inf)
     ),
     constant.popSize = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 2.298218, sdlog = 2.148)
     )
   ),
@@ -228,39 +228,39 @@ default_prior_settings <- list(
       params = list(scale = sqrt(pi / 2) / 0.05)
     ),
     flipflop.MDbias = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 0, sdlog = 1)
     ),
     flipflop.rlambda = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 3, sdlog = 1.5)
     ),
     errorModel.kappaScale = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 4.56, sdlog = 0.3)
     ),
     errorModel.etaOffset = list(
-      dfun = "stats::dbeta",
-      qfun = "stats::qbeta",
+      dfun = "dbeta",
+      qfun = "qbeta",
       params = list(shape1 = 95, shape2 = 5)
     ),
     errorModel.deltaOffset = list(
-      dfun = "stats::dbeta",
-      qfun = "stats::qbeta",
+      dfun = "dbeta",
+      qfun = "qbeta",
       params = list(shape1 = 5, shape2 = 95)
     ),
     luca.branch = list(
-      dfun = "stats::dunif",
-      qfun = "stats::qunif",
+      dfun = "dunif",
+      qfun = "qunif",
       params = list(min = 0, max = Inf),
       valid = F
     ),
     constant.popSize = list(
-      dfun = "stats::dlnorm",
-      qfun = "stats::qlnorm",
+      dfun = "dlnorm",
+      qfun = "qlnorm",
       params = list(meanlog = 2.298218, sdlog = 2.148)
     )
   )
