@@ -1,11 +1,27 @@
 #!/usr/bin/env bash
+README=($(git diff --cached --name-only | grep -Ei '^README\.[R]?md$'))
+DEFAULT_PRIOR_CHANGE=$(git diff --cached --name-only | grep -q 'R/prior_default_settings.R')
+MSG="use 'git commit --no-verify' to override this check"
 
-if git diff --cached --name-only | grep -q 'R/prior_default_settings.R'; then
-  echo "Rebuilding default_prior_settings.rda..."
-  Rscript data_generation/make_prior_default_settings.R || {
-    echo "make_prior_default_settings.R failed. Commit aborted."
-    exit 1
-  }
-else
-  echo "default_prior_settings.rda did not need to be rebuilt"
+
+if [[ ${#README[@]} == 0 ]]; then
+  echo "README.Rmd and README.md are synced"
+  exitCodeR=0
+elif [[ README.Rmd -nt README.md ]]; then
+  echo -e "README.md is out of date; please re-knit README.Rmd\n$MSG"
+  exitCodeR=1
+elif [[ ${#README[@]} -lt 2 ]]; then
+  echo -e "README.Rmd and README.md should be both staged\n$MSG"
+  exitCodeR=1
 fi
+
+if [[ $DEFAULT_PRIOR_CHANGE ]]; then
+  echo -e "data/prior_default_settings.rda is out of date; please re-generate it using:\n\tRscript data_generation/make_prior_default_settings.R\n$MSG"
+  exitCodeP=1
+else
+  echo "default_prior_settings.rda does not need to be rebuilt"
+  exitCodeP=0
+fi
+
+exit $exitCodeR && $exitCodeP
+
