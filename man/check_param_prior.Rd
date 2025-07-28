@@ -7,12 +7,12 @@
 check_param_prior(param, config = "O", prior_settings = NULL)
 }
 \arguments{
+\item{param}{name of the parameter}
+
 \item{config}{prior settings used, O by default}
 
 \item{prior_settings}{user-specified prior settings, normally set by
 modification of the default prior settings using \code{\link[=user_priors]{user_priors()}}}
-
-\item{parameter}{name of the parameter}
 }
 \value{
 prior_settings

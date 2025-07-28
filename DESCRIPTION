@@ -13,8 +13,13 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 LazyData: true
 Imports: 
+    data.table,
+    emdist,
     ks,
     LaplacesDemon,
-    stats
+    matrixStats,
+    partitions,
+    stats,
+    XML
 Depends: 
     R (>= 3.5)

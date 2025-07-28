@@ -8,7 +8,7 @@
 #' @export
 
 user_priors <- function(){
-  return(.pkg_env$default_prior_settings)
+  return(.phyfumr_env$default_prior_settings)
 }
 
 #' Finds invalid prior settings
@@ -33,7 +33,7 @@ check_priors <- function(prior_settings=NULL){
 
 #' Internal prior-setting checking tool for a given parameter and prior config
 #'
-#' @param parameter name of the parameter
+#' @param param name of the parameter
 #' @param config prior settings used, O by default
 #' @param prior_settings user-specified prior settings, normally set by
 #'   modification of the default prior settings using [user_priors()]
@@ -49,7 +49,7 @@ check_param_prior <- function(param,config="O",prior_settings=NULL){
   if(is.null(these_settings)){
     if(!is.null(prior_settings))
       warning("User-specified prior settings were not set properly and will not be used, using the default instead")
-    these_settings <- .pkg_env$default_prior_settings[[config]][[param]]
+    these_settings <- .phyfumr_env$default_prior_settings[[config]][[param]]
   }
   if(is.null(these_settings))
     return(function(x) NA_real_)
@@ -75,10 +75,7 @@ get_function <- function(x){
 
 #' Returns the density function of the Prior for a given parameter
 #'
-#' @param parameter name of the parameter
-#' @param config prior settings used, O by default
-#' @param prior_settings user-specified prior settings, normally set by
-#'   modification of the default prior settings using [user_priors()]
+#' @inheritParams check_param_prior
 #' @seealso [check_priors()]
 #'
 #' @return function that returns the density of the parameter value x, or
@@ -100,11 +97,7 @@ get_dfun_prior <- function(param,config="O",prior_settings=NULL) {
 
 #' Returns the quantile function of the Prior for a given parameter
 #'
-#' @param parameter name of the parameter
-#' @param config prior settings used, O by default
-#' @param prior_settings user-specified prior settings, normally set by
-#'   modification of the default prior settings using [user_priors()]
-#' @seealso [check_priors()]
+#' @inherit get_dfun_prior params seealso
 #'
 #' @return function that returns the quantile of the parameter probability p, or
 #'   function that returns NA_real_ if it is unknown

@@ -7,17 +7,18 @@
 qhalft(p, nu, scale)
 }
 \arguments{
-\item{p}{as in \link[LaplacesDemon:dist.Halft]{LaplacesDemon::qhalft}}
+\item{p}{as in \code{\link[LaplacesDemon:dist.Halft]{LaplacesDemon::qhalft()}}}
 
-\item{nu}{as in \link[LaplacesDemon:dist.Halft]{LaplacesDemon::qhalft}}
+\item{nu}{as in \code{\link[LaplacesDemon:dist.Halft]{LaplacesDemon::qhalft()}}}
 
-\item{scale}{as in \link[LaplacesDemon:dist.Halft]{LaplacesDemon::qhalft}}
+\item{scale}{as in \code{\link[LaplacesDemon:dist.Halft]{LaplacesDemon::qhalft()}}}
 }
 \value{
 the quantile of the half Student's T with p = p
 }
 \description{
-\link{LaplacesDemon} qhalft implementation does not work well for our purposes
+LaplacesDemon qhalft implementation does not work well for our purposes
 here (there's some stochasticity in the results and their variance is quite
 large)
 }
+\keyword{internal}

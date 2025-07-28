@@ -1,8 +1,18 @@
 # R/zzz.R
 # Environment with default prior parameters
-.pkg_env <- new.env(parent = emptyenv())
+.phyfumr_env <- new.env(parent = emptyenv())
 
-#' @importFrom utils data
+# list to store CSV data
+.phyfumr_env[["loadedCSVs"]] <- list()
+
+# Making the default prior parameters available in the .pkg_env
 .onLoad <- function(libname, pkgname) {
-  data("default_prior_settings", package = pkgname, envir = .pkg_env)
+  utils::data("default_prior_settings", package = pkgname, envir = .phyfumr_env)
 }
+
+# Silencing devtools::check with data.table syntax
+utils::globalVariables(c("loadedCSVs",
+                         "valid",
+                         "patient",
+                         "samplename",
+                         "locus"))

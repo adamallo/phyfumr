@@ -37,7 +37,7 @@ get_kde_threshold <- function(x, prob = 0.95, ...) {
 
 est_volume_above <- function(kde_obj, d) {
   dx <- diff(kde_obj$eval.points[1:2])
-  sum(kde_obj$estimate[kde_obj$estimate > threshold]) * dx
+  sum(kde_obj$estimate[kde_obj$estimate > d]) * dx
 }
 
 #Analytical volume calculation
@@ -62,7 +62,7 @@ est_volume_above <- function(kde_obj, d) {
 
 an_volume_above <- function(dfun, qfun, d, support = c(-Inf, Inf), tol = 1e-8, ...){
   bounds <- an_support_above(dfun, qfun, d, support, tol, ...)
-  if (all(!is.na(bounds))) return (integrate(dfun, lower = bounds[1], upper = bounds[2], ...)$value)
+  if (all(!is.na(bounds))) return (stats::integrate(dfun, lower = bounds[1], upper = bounds[2], ...)$value)
   else return(0)
 }
 
@@ -91,7 +91,7 @@ an_support_above <- function(dfun, qfun, d, support = c(-Inf, Inf), tol = 1e-8) 
   )
 
   # Check density at mode
-  x_mode <- optimize(function(x) -dfun(x), interval = auto_support)$minimum
+  x_mode <- stats::optimize(function(x) -dfun(x), interval = auto_support)$minimum
   d_mode <- dfun(x_mode)
 
   if (d_mode < d) {
@@ -101,12 +101,12 @@ an_support_above <- function(dfun, qfun, d, support = c(-Inf, Inf), tol = 1e-8) 
 
   # Get quantile limits from support
   p_lower <- if (is.finite(support[1])) suppressWarnings(
-    uniroot(function(p) qfun(p) - auto_support[1],
+    stats::uniroot(function(p) qfun(p) - auto_support[1],
             interval = c(tol, 1 - tol))$root
   ) else tol
 
   p_upper <- if (is.finite(support[2])) suppressWarnings(
-    uniroot(function(p) qfun(p) - auto_support[2],
+    stats::uniroot(function(p) qfun(p) - auto_support[2],
             interval = c(tol, 1 - tol))$root
   ) else 1 - tol
 
@@ -114,7 +114,7 @@ an_support_above <- function(dfun, qfun, d, support = c(-Inf, Inf), tol = 1e-8) 
   # Find roots safely
   find_bound <- function(p_from, p_to) {
     tryCatch({
-      root <- uniroot(function(p) dfun(qfun(p)) - d,
+      root <- stats::uniroot(function(p) dfun(qfun(p)) - d,
                       lower = p_from, upper = p_to, extendInt = "no")$root
       qfun(root)
     }, error = function(e) NA)
@@ -197,7 +197,7 @@ is_dispersion_comparable_e_a <- function(x,dfun,qfun,prob=0.95,support = c(-Inf,
   )
 
   #Maximal analytical density of the reference distribution
-  ref_mode <- optimize(function(x) -dfun(x), interval = auto_support)$minimum
+  ref_mode <- stats::optimize(function(x) -dfun(x), interval = auto_support)$minimum
   d_ref_mode <- dfun(ref_mode)
 
   return(d_ref_mode >= d)
