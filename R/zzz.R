@@ -1,5 +1,5 @@
 # R/zzz.R
-# Environment with default prior parameters
+# Package environment to cache data and store defaults
 .phyfumr_env <- new.env(parent = emptyenv())
 
 # list to store CSV data
@@ -8,6 +8,7 @@
 # Making the default prior parameters available in the .pkg_env
 .onLoad <- function(libname, pkgname) {
   utils::data("default_prior_settings", package = pkgname, envir = .phyfumr_env)
+  utils::data("default_model_params", package = pkgname, envir = .phyfumr_env)
 }
 
 # Silencing devtools::check with data.table syntax

@@ -21,15 +21,18 @@ skipped-probability normalization, expected full saturation skipped
 probability, probability threshold, and max_error
 }
 \description{
-This version only works well with small n and length(freqs)
+Compute full substitution saturation entropy using recursion
 }
 \details{
-This version uses recursion with to calculate multinomial
-compositions on the fly and thus require much less memory than
+This version uses recursion to calculate multinomial compositions on
+the fly and thus require much less memory than
 \code{\link[=get_fss_entropy_ml_full_composition]{get_fss_entropy_ml_full_composition()}}. Filtering compositions with very
 small probability speeds up the computation without big effect in the
-estimation.
+estimation. To estimate the probability threshold that will at least
+include a desired amount of multinomial probability, use
+\code{\link[=estimate_prob_threshold]{estimate_prob_threshold()}}
 }
 \seealso{
 [\code{\link[=get_fss_entropy_ml_full_composition]{get_fss_entropy_ml_full_composition()}}]
+[\code{\link[=estimate_prob_threshold]{estimate_prob_threshold()}}]
 }

@@ -25,8 +25,8 @@ keeping total skipped probability mass ≤ \code{epsilon}.
 \description{
 This function estimates a probability threshold for skipping low-probability
 compositions in multinomial-based entropy calculations. It ensures that the
-total probability mass of all skipped compositions is less than or equal to
-the specified error tolerance (\code{epsilon}).
+total cumulative probability of all skipped compositions is less than or
+equal to the specified error tolerance (\code{epsilon}).
 }
 \seealso{
 \code{\link[=get_fss_entropy_ml]{get_fss_entropy_ml()}}

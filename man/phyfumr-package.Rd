@@ -8,6 +8,14 @@
 \description{
 PHYFUM and PHYFUMflow perform phylogenetic estimation of somatic samples from tissues organized in clonal subpopulations using fluctuating CpG (fCpG) sites of methylation arrays. This package contains functions to QC selected fCpG sites before phylogenetic estimation and QC the estimation results.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/adamallo/phyfumr}
+  \item Report bugs at \url{https://github.com/adamallo/phyfumr/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Diego Mallo \email{dmalload@asu.edu} (\href{https://orcid.org/0000-0002-9046-8859}{ORCID})
 

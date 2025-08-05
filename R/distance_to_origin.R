@@ -36,8 +36,8 @@ get_empirical_freqs <- function(likelihoods,ml=F) {
 #'
 #' @param freqs empirical frequencies
 #'
-#' @returns list with the Earth's Mover Distance (emd) and the relative Earth's
-#'   Mover Distance (rEMD)
+#' @returns list with the Earth's Mover Distance (emdO) and the relative Earth's
+#'   Mover Distance (remdO)
 #'
 emd_to_origin <- function(freqs){
   freqBs <- seq(from=0,to=1,length.out=length(freqs))
@@ -48,5 +48,5 @@ emd_to_origin <- function(freqs){
   maxDivFreq <- rep(0,length.out=length(freqs)) #this is the maximum divergence frequency under any model, not this specific model
   midFreq <- length(freqs)/2
   maxDivFreq[ceiling(midFreq)] <- 1
-  return(list(emd=emd,rEMD=emd/emdist::emdw(freqBs,origin_freqs,freqBs,maxDivFreq)))
+  return(list(emdO=emd,remdO=emd/emdist::emdw(freqBs,origin_freqs,freqBs,maxDivFreq)))
 }

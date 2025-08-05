@@ -18,10 +18,13 @@ Imports:
     ks,
     LaplacesDemon,
     matrixStats,
-    partitions,
     stats,
     XML
 Depends: 
     R (>= 3.5)
 URL: https://github.com/adamallo/phyfumr
 BugReports: https://github.com/adamallo/phyfumr/issues
+Suggests: 
+    pbapply,
+    partitions
+

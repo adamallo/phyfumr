@@ -10,8 +10,8 @@ emd_to_origin(freqs)
 \item{freqs}{empirical frequencies}
 }
 \value{
-list with the Earth's Mover Distance (emd) and the relative Earth's
-Mover Distance (rEMD)
+list with the Earth's Mover Distance (emdO) and the relative Earth's
+Mover Distance (remdO)
 }
 \description{
 It uses the Earth's Mover Distance between the assumed starting frequencies

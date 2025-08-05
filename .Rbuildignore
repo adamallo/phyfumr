@@ -4,3 +4,6 @@
 (^|[/\\])Icon.*$
 (^|[/\\])hello.*$
 ^README\.Rmd$
+^\\.DS_Store$
+^\\.AppleDouble$
+^\\._.*$

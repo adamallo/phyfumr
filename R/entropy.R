@@ -20,8 +20,8 @@
 get_peak_likelihoods <- function(b_data,delta,eta,kappa,s){
   #state_count <- (0.5 * (s + 1) * (s + 2))
   peak_count <- 2 * s + 1
-  loci_count <- nrow(b_data)
-  sample_count <- ncol(b_data)
+  loci_count <- ncol(b_data)
+  sample_count <- nrow(b_data)
 
   ideal_beta <- NULL
   beta <- NULL
@@ -41,7 +41,7 @@ get_peak_likelihoods <- function(b_data,delta,eta,kappa,s){
     lgamma_alphaplusbeta[peak] = lgamma(transformed_alpha[peak] + transformed_beta[peak]);
   }
 
-  likelihoods <- array(NA,dim = c(loci_count,peak_count,sample_count))
+  likelihoods <- array(NA,dim = c(sample_count,peak_count,loci_count))
   for (locus in 1:loci_count){
     for (peak in 1:peak_count){
       for (sample in 1:sample_count){
@@ -131,7 +131,7 @@ get_entropy <- function(likelihoods,ml=T) {
 
 get_fss_entropy_ml_full_composition <- function(freqs, n, prob_threshold = 0) {
   if (!requireNamespace("partitions", quietly = TRUE)) {
-    stop("Package 'partitions' is required. Please install it.")
+    stop("Package 'partitions' is required for this function. Please install it or use get_fss_entropy_ml")
   }
 
   counts <- t(partitions::compositions(n, length(freqs)))
@@ -160,8 +160,8 @@ get_fss_entropy_ml_full_composition <- function(freqs, n, prob_threshold = 0) {
 #'
 #' This function estimates a probability threshold for skipping low-probability
 #' compositions in multinomial-based entropy calculations. It ensures that the
-#' total probability mass of all skipped compositions is less than or equal to
-#' the specified error tolerance (`epsilon`).
+#' total cumulative probability of all skipped compositions is less than or
+#' equal to the specified error tolerance (`epsilon`).
 #'
 #' @inheritParams get_fss_entropy_ml_full_composition
 #' @param epsilon Maximum total probability mass allowed to be skipped. Default
@@ -191,16 +191,17 @@ estimate_prob_threshold <- function(freqs, n, epsilon = 0.05, sample_size = 1000
 
 #' Compute full substitution saturation entropy using recursion
 #'
-#' This version only works well with small n and length(freqs)
-#'
-#' @details This version uses recursion with to calculate multinomial
-#'   compositions on the fly and thus require much less memory than
+#' @details This version uses recursion to calculate multinomial compositions on
+#'   the fly and thus require much less memory than
 #'   [get_fss_entropy_ml_full_composition()]. Filtering compositions with very
 #'   small probability speeds up the computation without big effect in the
-#'   estimation.
+#'   estimation. To estimate the probability threshold that will at least
+#'   include a desired amount of multinomial probability, use
+#'   [estimate_prob_threshold()]
 #'
 #' @inherit get_fss_entropy_ml_full_composition params return
 #' @seealso [[get_fss_entropy_ml_full_composition()]]
+#'   [[estimate_prob_threshold()]]
 #' @export
 
 get_fss_entropy_ml <- function(freqs, n, prob_threshold = NULL) {
@@ -311,9 +312,13 @@ simulate_betas <- function(counts, delta, eta, kappa) {
 #' @keywords internal, unsupported
 
 
-get_fss_entropy <- function(freqs,n,delta,eta,kappa,ml=F,...){
+get_fss_entropy <- function(freqs,n,delta,eta,kappa,ml=T,...){
   if(ml==T)
     return(get_fss_entropy_ml(freqs,n,...))
+
+  if (!requireNamespace("partitions", quietly = TRUE)) {
+    stop("Package 'partitions' is required for this function. Please install it or use get_fss_entropy_ml")
+  }
   counts <- t(partitions::compositions(n,length(freqs)))
   betas <- simulate_betas(counts,delta,eta,kappa)
   #partials <- get_peak_likelihoods(betas,delta,eta,kappa,length(freqs)) #TODO check this. get_peak_likelihoods expects s not peak_count!

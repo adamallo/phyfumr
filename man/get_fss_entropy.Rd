@@ -4,7 +4,7 @@
 \alias{get_fss_entropy}
 \title{Compute full substitution saturation entropy}
 \usage{
-get_fss_entropy(freqs, n, delta, eta, kappa, ml = F, ...)
+get_fss_entropy(freqs, n, delta, eta, kappa, ml = T, ...)
 }
 \arguments{
 \item{freqs}{Vector of category probabilities (i.e., frequencies, sums to 1)}
