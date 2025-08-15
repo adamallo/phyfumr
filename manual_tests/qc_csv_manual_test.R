@@ -1,5 +1,5 @@
-library(data.table)
-sample_data <- fread("~/projects/flipFlop/newG22new/Gabbutt2022-sampleinfo-corrected.csv")
+library(phyfumr)
+sample_data <- data.table::fread("~/projects/flipFlop/newG22new/Gabbutt2022-sampleinfo-corrected.csv")
 sample_data <- sample_data[!patient%in%c(NA,"US"),]
 dirs <- "~/projects/flipFlop/latestG22/tissueUnspecificSelection/nf/data/"
 files <- list.files(dirs,pattern = "*.csv",full.names = T)

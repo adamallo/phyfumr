@@ -52,6 +52,6 @@ max* thresholds)
 QC of selected fCpG sites
 }
 \details{
-This function can runs in parallel (per patient) if pbapply is
+This function can run in parallel (per patient) if pbapply is
 available
 }

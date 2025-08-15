@@ -1,14 +1,29 @@
 # R/zzz.R
+
 # Package environment to cache data and store defaults
 .phyfumr_env <- new.env(parent = emptyenv())
-
-# list to store CSV data
-.phyfumr_env[["loadedCSVs"]] <- list()
 
 # Making the default prior parameters available in the .pkg_env
 .onLoad <- function(libname, pkgname) {
   utils::data("default_prior_settings", package = pkgname, envir = .phyfumr_env)
   utils::data("default_model_params", package = pkgname, envir = .phyfumr_env)
+
+  # Checking if parallelism using pbapply is available
+  .phyfumr_env[["use_parallel"]] <- requireNamespace("pbapply", quietly = TRUE)
+
+  # Setting rwty.processors to 1 by default since we may call their functions in
+  # parallel
+  rwty.processors <- 1
+
+  # list to store CSV data
+  .phyfumr_env[["loadedCSVs"]] <- list()
+
+  # Alternative phyfum parameterizations
+  .phyfumr_env[["absolute_rates_params"]] <- c("flipflop.mu","flipflop.lambda","flipflop.gamma")
+  .phyfumr_env[["relative_rates_params"]] <- c("clock.rate","flipflop.rlambda","flipflop.MDbias")
+
+  # Phyfum log output information
+  .phyfumr_env[["not_params"]] <- c("chain","state","treedistance")
 }
 
 # Silencing devtools::check with data.table syntax
@@ -16,4 +31,23 @@ utils::globalVariables(c("loadedCSVs",
                          "valid",
                          "patient",
                          "samplename",
-                         "locus"))
+                         "locus",
+                         "chain",
+                         "param",
+                         "meanP",
+                         "medianP",
+                         "state",
+                         "treedistance",
+                         "x",
+                         ".",
+                         "burnin",
+                         "likelihood",
+                         "flipflop.mu",
+                         "flipflop.lambda",
+                         "flipflop.gamma",
+                         "clock.rate",
+                         "flipflop.rlambda",
+                         "flipflop.MDbias",
+                         "problem",
+                         "Rhat"))
+

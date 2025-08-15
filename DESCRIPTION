@@ -12,13 +12,24 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 LazyData: true
+Remotes:
+    adamallo/RWTY
 Imports: 
+    cowplot,
     data.table,
     emdist,
+    ggplot2,
+    ggrepel,
+    HDInterval,
     ks,
     LaplacesDemon,
     matrixStats,
+    methods,
+    rlang,
+    rstan,
+    rwty,
     stats,
+    utils,
     XML
 Depends: 
     R (>= 3.5)
@@ -27,4 +38,3 @@ BugReports: https://github.com/adamallo/phyfumr/issues
 Suggests: 
     pbapply,
     partitions
-

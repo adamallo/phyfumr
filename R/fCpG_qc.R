@@ -4,7 +4,7 @@
 
 #' QC of selected fCpG sites
 #'
-#' @details This function can runs in parallel (per patient) if pbapply is
+#' @details This function can run in parallel (per patient) if pbapply is
 #'   available
 #'
 #' @param csvs csv file(s) containing b-values. A row per CpG site and column
@@ -33,7 +33,7 @@
 
 #TODO optimize thresholds
 qc_csv <- function(csvs,
-                   patientData,
+                  patientData,
                   max_rel_emd_to_origin=0.5,
                   max_rel_entropy=0.95,
                   model_params=NULL,
