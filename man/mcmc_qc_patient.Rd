@@ -22,7 +22,8 @@ mcmc_qc_patient(
   posterior_plots_suffix = "plotPosteriorDensities.pdf",
   rwty_plots_suffix = "plotsRWTY.pdf",
   correlation_plots_suffix = "plotCorrelations.jpeg",
-  mle_suffix = "MLE.csv"
+  mle_suffix = "MLE.csv",
+  ...
 )
 }
 \arguments{
@@ -79,6 +80,16 @@ NULL, this output is not generated.}
 
 \item{mle_suffix}{suffix for the tabular output with marginal likelihood
 estimations using HME and AICm methods.}
+
+\item{...}{
+  Arguments passed on to \code{\link[=fix_nexus]{fix_nexus}}
+  \describe{
+    \item{\code{backup}}{Logical. Whether a .trees_bkp with the original contents should
+be created before fixing the file}
+  }}
+}
+\value{
+data.table with convergence statistics
 }
 \description{
 This function generates plots and tables to aid assessing phyfum's mixing and
@@ -88,5 +99,5 @@ issues using Rhat and ESS.
 \details{
 When n_cores is > 1, RNGkind("L'Ecuyer-CMRG") random number
 generator is used instead of the default. This allows mclapply to be
-reproducible. This is only needed if, internally, rwty.processors > 1.
+reproducible.
 }

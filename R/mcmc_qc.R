@@ -32,6 +32,31 @@ AICM=function(loglikelihoods){
 detect_constants <- function(thedata,params){
   params[t(thedata[,lapply(.SD,FUN = function(x){stats::sd(x)==0}),.SDcols = params])]}
 
+
+#' Fixes nexus files of unfinished phyfum runs
+#'
+#' @param file .trees files
+#' @param backup Logical. Whether a .trees_bkp with the original contents should
+#'   be created before fixing the file
+#'
+#' @returns TRUE if the file has been fixed, FALSE if it didn't need fixing
+
+fix_nexus <- function(file,backup = TRUE) {
+  last_line <- ifelse(.phyfumr_env[["system_tail"]],
+                      system2("tail", c("-n", "1", shQuote(file)), stdout = TRUE),
+                      utils::tail(readLines(file, warn = FALSE), 1))
+
+  if(!grepl("END;|ENDBLOCK;", last_line, ignore.case = TRUE)){
+    if(backup==TRUE){
+      if(file.copy(file, paste0(file,"_bkp"), overwrite = TRUE)==FALSE)
+        stop("ERROR: cannot write the backup Nexus file")# overwrite=FALSE by default
+    }
+    cat("End;",file=file,append=T)
+    return(TRUE)
+  }
+  return(FALSE)
+}
+
 #RWTY integration
 #################
 #' Ensures that chains are in the expected format
@@ -293,6 +318,7 @@ tree_convergence_stats <- function(chains,
     convergence_stats(generate_tree_traces(chain,treedist = treedist, tree_i = tree_i,...)[,.(treedistance)],cred_mass = cred_mass)
   }
 
+  #WARNING: infun uses mclapply if rwrt.processors > 1. A thread explosion can easily happen here
   replicated_convergence_stats <- data.table::rbindlist(slapply(tree_is, infun, chain = merged_chain, cl = cl,
                                                                 burnin_p = 0,
                                                                 treedist = treedist),idcol = "tree_i")
@@ -454,7 +480,7 @@ write_continuous_parameter_plots <- function(thedata,params,out_dir,out_name,ndi
 #'
 #' @details When n_cores is > 1, RNGkind("L'Ecuyer-CMRG") random number
 #'   generator is used instead of the default. This allows mclapply to be
-#'   reproducible. This is only needed if, internally, rwty.processors > 1.
+#'   reproducible.
 #'
 #' @param trees_files list of phyfum's output .trees files (one per independent
 #'   run)
@@ -492,6 +518,9 @@ write_continuous_parameter_plots <- function(thedata,params,out_dir,out_name,ndi
 #'   the number of cores (Default, good to run this function in series).
 #'   Otherwise, it fixes the number of cores that rwty and data.table will use.
 #'   They never run in parallel so both can use the maximum number of cores
+#' @inheritDotParams fix_nexus backup
+#' @returns data.table with convergence statistics
+#' @export
 
 mcmc_qc_patient <- function(trees_files,
                             log_files=NULL,
@@ -511,17 +540,15 @@ mcmc_qc_patient <- function(trees_files,
                             posterior_plots_suffix = "plotPosteriorDensities.pdf",
                             rwty_plots_suffix = "plotsRWTY.pdf",
                             correlation_plots_suffix = "plotCorrelations.jpeg",
-                            mle_suffix = "MLE.csv"
+                            mle_suffix = "MLE.csv",
+                            ...
                             ){
 
   #arg checking and configuration based on it
-  if(is.null(n_cores) || n_cores == 1){
-    rwty.processors <- 1
-    if(!is.null(n_cores))
-      data.table::setDTthreads(1)
+  if(!is.null(n_cores) && n_cores == 1){
+    data.table::setDTthreads(1) #Everything should be single thread to use coarse-grained parallelism
   } else {
-    rwty.processors <- n_cores
-    RNGkind("L'Ecuyer-CMRG") #Different random number generator, so that mclapply is reproducible, only needed if rwty.processors > 1
+    RNGkind("L'Ecuyer-CMRG") #Different random number generator, so that mclapply is reproducible
     data.table::setDTthreads(n_cores)
   }
 
@@ -548,6 +575,7 @@ mcmc_qc_patient <- function(trees_files,
   message("Loading traces...")
   sink(nullfile()) #shut up!
   chains <- invisible(lapply(1:length(trees_files),FUN=function(i_file){
+    fix_nexus(trees_files[i_file],...)
     chain <- rwty::load.trees(trees_files[i_file],format="BEAST",logfile = log_files[i_file]);
     chain}))
   sink()
@@ -585,7 +613,7 @@ mcmc_qc_patient <- function(trees_files,
                                                  n_focal_trees = n_focal_trees,
                                                  treedist = treedist,
                                                  cred_mass = cred_mass,
-                                                 cl = rwty.processors,
+                                                 cl = n_cores,
                                                  by_chain = TRUE)
 
   #Make one tree-distance trace from the tree with index 1 for tree-trace plots
@@ -602,7 +630,7 @@ mcmc_qc_patient <- function(trees_files,
   #######################################
   message("Assessing parameter convergence... ")
   continuous_convergence <- param_convergence_stats(thedata = these_data[burnin==FALSE,],
-                          cl = rwty.processors)
+                          cl = n_cores)
   convergence <- rbind(continuous_convergence,topology_convergence)
   data.table::setkey(convergence,param)
   message("Done\n")
@@ -711,7 +739,7 @@ mcmc_qc_patient <- function(trees_files,
     this_lml <- LaplacesDemon::LML(LL=these_data[burnin==FALSE,likelihood],method="HME")$LML
     this_AICm <- AICM(these_data[burnin==FALSE,likelihood])
     mle_table <- data.table::data.table(cond=c(base_name),method=c("HME","AICm"),lML=c(this_lml,this_AICm))
-    write.csv(mle_table,file = paste0(out_dir,"/",paste(sep="_",base_name,mle_suffix)),quote = FALSE,row.names = FALSE)
+    utils::write.csv(mle_table,file = paste0(out_dir,"/",paste(sep="_",base_name,mle_suffix)),quote = FALSE,row.names = FALSE)
   } else {
     warning("Marginal likelihood estimation deactivated. If you need it, make sure to indicate an output file suffix using the mle_suffix argument")
   }
@@ -727,6 +755,49 @@ mcmc_qc_patient <- function(trees_files,
   return(convergence)
 }
 
+#' Complete MCMC QC per experiment
+#'
+#' This function uses [mcmc_qc_patient()] to generate plots and tables to aid
+#' assessing phyfum's mixing and convergence. It can use several chains per run,
+#' and automatically flags some issues using Rhat and ESS.
+#'
+#' @details all .trees files within the objective directory will be analized.
+#'   Files with the same name will be considered independent phyfum runs under
+#'   the same conditions.
+#'
+#' @param file_dir directory that contains .trees and .log files (with or
+#'   without subdirectories)
+#' @inheritParams mcmc_qc_patient
+#' @param n_cores number of cores to use for coarse-grained parallelization (per
+#'   patient)
+#' @inheritDotParams mcmc_qc_patient burnin_p min_ess max_rhat cred_mass n_focal_trees treedist n_cores base_name problematic_output_suffix all_output_suffix posterior_plots_suffix rwty_plots_suffix correlation_plots_suffix mle_suffix
+#' @returns data.table with convergence statistics, with a column indicating the
+#'   condition (i.e., filename of the input file without .trees)
+#' @export
 
+mcmc_qc <- function(file_dir,
+                    out_dir,
+                    plot_dir,
+                    n_cores,
+                    ...){
 
-#mcmc_qc?
+  trees_files <- list.files(path = file_dir, pattern = "*.trees$",
+                            full.names = T,
+                            recursive = T)
+  run_names <- basename(trees_files)
+
+  runs_info <- data.table::data.table(trees_files=trees_files,run_names = gsub(pattern = ".trees",
+                                                                   replacement = "",
+                                                                   x = run_names))
+
+  all_results <- data.table::rbindlist(slapply(split(runs_info,by="run_names"),function(this_data,out_dir,plot_dir){
+    this_trees_files <- this_data[,trees_files]
+    mcmc_qc_patient(trees_files = this_trees_files,
+                    out_dir = out_dir,
+                    plot_dir = plot_dir,
+                    n_cores = 1,
+                    ...)
+  },out_dir=out_dir,plot_dir=plot_dir,cl=n_cores),idcol = "condition")
+
+  return(all_results)
+}

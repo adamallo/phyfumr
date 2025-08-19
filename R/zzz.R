@@ -13,7 +13,7 @@
 
   # Setting rwty.processors to 1 by default since we may call their functions in
   # parallel
-  rwty.processors <- 1
+  rwty.processors <<- 1
 
   # list to store CSV data
   .phyfumr_env[["loadedCSVs"]] <- list()
@@ -24,6 +24,9 @@
 
   # Phyfum log output information
   .phyfumr_env[["not_params"]] <- c("chain","state","treedistance")
+
+  # To use system's tail for efficiency, not in Windows
+  .phyfumr_env[["system_tail"]] <- Sys.which("tail") != ""
 }
 
 # Silencing devtools::check with data.table syntax
