@@ -8,3 +8,4 @@
 ^\\.AppleDouble$
 ^\\._.*$
 manual_tests*
+phyfumflow_scripts*
