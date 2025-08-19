@@ -25,6 +25,10 @@
   # Phyfum log output information
   .phyfumr_env[["not_params"]] <- c("chain","state","treedistance")
 
+  # System detection
+  .phyfumr_env[["sys"]] <- Sys.info()[["sysname"]]
+  .phyfumr_env[["has_cairo"]] <- capabilities("cairo")
+
   # To use system's tail for efficiency, not in Windows
   .phyfumr_env[["system_tail"]] <- Sys.which("tail") != ""
 }

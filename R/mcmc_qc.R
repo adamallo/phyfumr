@@ -685,15 +685,22 @@ mcmc_qc_patient <- function(trees_files,
   if(!is.null(correlation_plots_suffix)){
     message("Printing RWTY correlation plots...")
     sink(nullfile())
+
     for (plotname in names(rwty_plots[grep(".correlations",names(rwty_plots),value = TRUE)])){
-      grDevices::jpeg(filename = paste0(plot_dir,"/",paste(sep="_",base_name,plotname,correlation_plots_suffix)),width = 1200, height = 1200,type = "quartz")
+      if (.phyfumr_env[["has_cairo"]]) {
+        grDevices::jpeg(filename = paste0(plot_dir,"/",paste(sep="_",base_name,plotname,correlation_plots_suffix)),width = 1200, height = 1200,type = "cairo")
+      } else if (.phyfumr_env[["sys"]] == "Darwin") {
+        grDevices::jpeg(filename = paste0(plot_dir,"/",paste(sep="_",base_name,plotname,correlation_plots_suffix)),width = 1200, height = 1200,type = "quartz")
+      } else {
+        grDevices::jpeg(filename = paste0(plot_dir,"/",paste(sep="_",base_name,plotname,correlation_plots_suffix)),width = 1200, height = 1200)
+      }
       suppressWarnings(suppressMessages(print(rwty_plots[[plotname]])))
       grDevices::dev.off()
     }
     sink()
     message("Done\n")
   } else {
-      warning("Correlation plots deactivated. If you need them, make sure to indicate a suffix using the correlation_plots_suffix argument")
+    warning("Correlation plots deactivated. If you need them, make sure to indicate a suffix using the correlation_plots_suffix argument")
   }
 
   #Write table outputs
