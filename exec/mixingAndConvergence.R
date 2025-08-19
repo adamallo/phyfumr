@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 library(phyfumr)
 
 #Parsing command-line arguments and checking input
