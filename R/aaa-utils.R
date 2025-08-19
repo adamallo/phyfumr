@@ -17,3 +17,24 @@ slapply <- function(X, FUN, ...) {
     return(pbapply::pblapply(X = X, FUN = FUN, ...))
   }
 }
+
+#' Run a bundled script
+#'
+#' Used as Rscript -e 'phyfumr::run("scriptName.R")' --args arg1 arg2
+#'
+#' @param script Name of the script (file in `exec/`)
+#' @export
+#'
+
+run <- function(script) {
+  path <- system.file("exec", script, package = "phyfumr")
+  if (path == "") stop("Script not found: ", script, call. = FALSE)
+
+  # capture all args after --args
+  args <- commandArgs(trailingOnly = TRUE)
+
+  # run the bundled script with those args
+  res <- system2(command = R.home("bin/Rscript"),
+                 args = c(path, args))
+  invisible(res)
+}
