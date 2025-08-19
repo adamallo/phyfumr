@@ -43,7 +43,7 @@ detect_constants <- function(thedata,params){
 
 fix_nexus <- function(file,backup = TRUE) {
   last_line <- ifelse(.phyfumr_env[["system_tail"]],
-                      system2("tail", c("-n", "1", shQuote(file)), stdout = TRUE),
+                      system2("tail", c("-n", "1", shQuote(normalizePath(file))), stdout = TRUE),
                       utils::tail(readLines(file, warn = FALSE), 1))
 
   if(!grepl("END;|ENDBLOCK;", last_line, ignore.case = TRUE)){
