@@ -33,7 +33,7 @@
   .phyfumr_env[["system_tail"]] <- Sys.which("tail") != ""
 
   # Avoiding spurious Rplots.pdf
-  if(!interactive()) pdf(NULL)
+  if(!interactive()) grDevices::pdf(NULL)
 }
 
 # Silencing devtools::check with data.table syntax
