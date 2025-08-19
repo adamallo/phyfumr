@@ -31,6 +31,9 @@
 
   # To use system's tail for efficiency, not in Windows
   .phyfumr_env[["system_tail"]] <- Sys.which("tail") != ""
+
+  # Avoiding spurious Rplots.pdf
+  if(!interactive()) pdf(NULL)
 }
 
 # Silencing devtools::check with data.table syntax
