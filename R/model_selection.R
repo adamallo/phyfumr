@@ -8,19 +8,19 @@
 #' @param out_dir output directory to write .csv files with model selection information
 #' @param plot_dir plot output directory
 #' @param method sorted list of preferred methods to estimate the marginal likelihood for model selection
-#' @param min_bf minimum Bayes Factor to consider a model (s value) as a valid alternative to the best-fit
+#' @param min_bf minimum Bayes Factor to consider a model (S value) as a valid alternative to the best-fit
 #' @param file_regex R regular expression to locate the files that contain the MLE estimation information. The default should work unless [mcmc_qc()] output filenames were modified
 #' @param n_cells_regex R regular expression with a group that captures the S number from the MLE.csv filename. Again, the default should work (see file_regex)
 #' @param basename_regex R regular expression to substitute with "" to generate the condition name from the MLE.csv filename. Again, the default should work (see file_regex)
 #' @param by_patient Logical to activate patient-specific tables (usually not needed)
 #' @param warn_extremes Logical to activate warning messages indicating cases for which additional phyfum runs with other S values should be performed to improve S model selection
-#' @param plot_aspect_ratio aspect ratio for the s model selection plots
+#' @param plot_aspect_ratio aspect ratio for the S model selection plots
 #' @param all_output_suffix filename (or suffix for by_patient output) for the table with all the selection results
-#' @param plot_output_suffix suffix for s model selection plots
-#' @param selected_output_suffix filename (or suffix for by_patient output) for the table with the selected s values (using the BF to the best s) per patient
-#' @param bestS_output_suffix filename (or suffix for by_patient output) for the table with the best s value per patient
-#' @param extreme_selected_output_suffix filename (or suffix for by_patient output) for the table that contains cases for which a s value that is valid according to the BF against the best-fit model is a extreme value (i.e., more S values should be assessed to know if more s values would be included in the final selection)
-#' @param extreme_valid_output_suffix filename (or suffix for by_patient output) for the table that contains cases for which the best-fit s value was an extreme value in the current sampling (i.e., more S values should be assessed to know if a different S value will better this one)
+#' @param plot_output_suffix suffix for S model selection plots
+#' @param selected_output_suffix filename (or suffix for by_patient output) for the table with the selected S values (using the BF to the best S) per patient
+#' @param bestS_output_suffix filename (or suffix for by_patient output) for the table with the best S value per patient
+#' @param extreme_selected_output_suffix filename (or suffix for by_patient output) for the table that contains cases for which a S value that is valid according to the BF against the best-fit model is a extreme value (i.e., more S values should be assessed to know if more S values would be included in the final selection)
+#' @param extreme_valid_output_suffix filename (or suffix for by_patient output) for the table that contains cases for which the best-fit S value was an extreme value in the current sampling (i.e., more S values should be assessed to know if a different S value will better this one)
 #'
 #' @returns data.table with all selection information
 #' @export
@@ -58,32 +58,32 @@ model_selection <- function(in_dir,
 
   #Data parsing
   all_mle_data <- data.table::rbindlist(lapply(input_files,data.table::fread),idcol = "file")
-  all_mle_data[,`:=`(patient=gsub(basename_regex,"",cond),s=as.numeric(gsub(n_cells_regex,"\\1",cond)))]
+  all_mle_data[,`:=`(patient=gsub(basename_regex,"",cond),S=as.numeric(gsub(n_cells_regex,"\\1",cond)))]
 
   #Model selection
   all_mle_data_with_selection_stats <- data.table::rbindlist(lapply(split(all_mle_data,by="patient"),function(this_data,min_bf){
-    n_s <- length(this_data[,unique(s)])
-    method_analysis <- this_data[,.N,by=method][,`:=`(valid_method=N==n_s)][method,.SD,on="method"][valid_method==T,`:=`(method_order=.I)]
+    n_S <- length(this_data[,unique(S)])
+    method_analysis <- this_data[,.N,by=method][,`:=`(valid_method=N==n_S)][method,.SD,on="method"][valid_method==T,`:=`(method_order=.I)]
     new_data <- data.table::copy(this_data)
     new_data[method=="AICm",`:=`(lML=lML*-1)] #AICm's lML is the AICm not the lML and thus needs to be inverted for selection. Additionally, we can't use BFs with it.
     new_data <- new_data[order(-lML),.(file,cond,best=lML==data.table::first(lML),
-                                       lML,s,selected=max(lML)-lML<=min_bf,min_s=min(s),max_s=max(s),
-                                       extreme_best=lML==data.table::first(lML)&(s==max(s)|s==min(s)),
-                                       extreme_valid=max(lML)-lML<=min_bf&(s==max(s)|s==min(s))),by=method]
+                                       lML,S,selected=max(lML)-lML<=min_bf,min_S=min(S),max_S=max(S),
+                                       extreme_best=lML==data.table::first(lML)&(S==max(S)|S==min(S)),
+                                       extreme_valid=max(lML)-lML<=min_bf&(S==max(S)|S==min(S))),by=method]
     new_data[method=="AICm",`:=`(lML=lML*-1,selected=NA)]
     return(data.table::merge.data.table(new_data,method_analysis,by = "method",all.x = TRUE))
   },min_bf=min_bf),idcol = "patient")
 
   #Output
-  check_write_csv(all_mle_data_with_selection_stats[order(method_order),][best==T,.(patient,method,s,lML,extreme_best)],
+  check_write_csv(all_mle_data_with_selection_stats[order(method_order),][best==T,.(patient,method,S,lML,extreme_best)],
                   bestS_output_suffix,
                   out_dir)
 
-  check_write_csv(all_mle_data_with_selection_stats[order(method_order),][selected==T,.(patient,method,s,lML,extreme_valid)],
+  check_write_csv(all_mle_data_with_selection_stats[order(method_order),][selected==T,.(patient,method,S,lML,extreme_valid)],
                   selected_output_suffix,
                   out_dir)
 
-  check_write_csv(all_mle_data_with_selection_stats[order(method_order),][,.(patient,method,best,lML,s,selected,valid_method,method_order,extreme_best,extreme_valid)],
+  check_write_csv(all_mle_data_with_selection_stats[order(method_order),][,.(patient,method,best,lML,S,selected,valid_method,method_order,extreme_best,extreme_valid)],
                   all_output_suffix,
                   out_dir)
 
@@ -97,12 +97,12 @@ model_selection <- function(in_dir,
 
   if(by_patient==TRUE){
     for(this_patient in all_mle_data_with_selection_stats[,unique(patient)]){
-      check_write_csv(all_mle_data_with_selection_stats[order(method_order),][best==T & patient==this_patient,.(patient,method,s,lML,extreme_best)],
+      check_write_csv(all_mle_data_with_selection_stats[order(method_order),][best==T & patient==this_patient,.(patient,method,S,lML,extreme_best)],
                       bestS_output_suffix,
                       out_dir,
                       paste(sep="_",patient,bestS_output_suffix))
 
-      check_write_csv(all_mle_data_with_selection_stats[order(method_order),][selected==T & patient==this_patient,.(patient,method,s,lML,extreme_valid)],
+      check_write_csv(all_mle_data_with_selection_stats[order(method_order),][selected==T & patient==this_patient,.(patient,method,S,lML,extreme_valid)],
                       selected_output_suffix,
                       out_dir,
                       paste(sep="_",patient,selected_output_suffix))
@@ -121,17 +121,17 @@ model_selection <- function(in_dir,
 
   #Warnings
   if(warn_extremes==T){
-    if(length(all_mle_data_with_selection_stats[extreme_best==T & method_order==1 & s==max_s,patient])!=0)
-      warning(sprintf("IMPORTANT: The best-fit S value is a extreme of the range explored for patients: %s. The analysis should be re-run adding higher S values to find the global optimum",paste(collapse=",",all_mle_data_with_selection_stats[extreme_best==T & method_order==1 & s==max_s,patient])))
+    if(length(all_mle_data_with_selection_stats[extreme_best==T & method_order==1 & S==max_S,patient])!=0)
+      warning(sprintf("IMPORTANT: The best-fit S value is a extreme of the range explored for patients: %s. The analysis should be re-run adding higher S values to find the global optimum",paste(collapse=",",all_mle_data_with_selection_stats[extreme_best==T & method_order==1 & S==max_S,patient])))
 
-    if(length(all_mle_data_with_selection_stats[extreme_best==T & method_order==1 & s==min_s,patient])!=0)
-      warning(sprintf("IMPORTANT: The best-fit S value is a extreme of the range explored for patients: %s. The analysis should be re-run adding lower S values to find the global optimum",paste(collapse=",",all_mle_data_with_selection_stats[extreme_best==T & method_order==1 & s==min_s,patient])))
+    if(length(all_mle_data_with_selection_stats[extreme_best==T & method_order==1 & S==min_S,patient])!=0)
+      warning(sprintf("IMPORTANT: The best-fit S value is a extreme of the range explored for patients: %s. The analysis should be re-run adding lower S values to find the global optimum",paste(collapse=",",all_mle_data_with_selection_stats[extreme_best==T & method_order==1 & S==min_S,patient])))
 
-    if(length(all_mle_data_with_selection_stats[extreme_valid==T & method_order==1 & s==max_s,patient])!=0)
-      warning(sprintf("The largest assayed S value cannot be rejected as a valid S value for patients: %s. We recommend the analysis is re-run adding larger S values to describe better the range of S values that may be valid",paste(collapse=",",all_mle_data_with_selection_stats[extreme_valid==T & method_order==1 & s==max_s,patient])))
+    if(length(all_mle_data_with_selection_stats[extreme_valid==T & method_order==1 & S==max_S,patient])!=0)
+      warning(sprintf("The largest assayed S value cannot be rejected as a valid S value for patients: %s. We recommend the analysis is re-run adding larger S values to describe better the range of S values that may be valid",paste(collapse=",",all_mle_data_with_selection_stats[extreme_valid==T & method_order==1 & S==max_S,patient])))
 
-    if(length(all_mle_data_with_selection_stats[extreme_valid==T & method_order==1 & s==min_s,patient])!=0)
-      warning(sprintf("The smallest assayed S value cannot be rejected as a valid S value for patients: %s. We recommend the analysis is re-run adding smaller S values to describe better the range of S values that may be valid",paste(collapse=",",all_mle_data_with_selection_stats[extreme_valid==T & method_order==1 & s==min_s,patient])))
+    if(length(all_mle_data_with_selection_stats[extreme_valid==T & method_order==1 & S==min_S,patient])!=0)
+      warning(sprintf("The smallest assayed S value cannot be rejected as a valid S value for patients: %s. We recommend the analysis is re-run adding smaller S values to describe better the range of S values that may be valid",paste(collapse=",",all_mle_data_with_selection_stats[extreme_valid==T & method_order==1 & S==min_S,patient])))
   }
 
  #plots
@@ -140,7 +140,7 @@ model_selection <- function(in_dir,
 
       these_thresholds <- all_mle_data_with_selection_stats[patient==this_patient & method!="AICm",.(minY=max(lML)-min_bf),by=method]
 
-      this_patient_plot <- ggplot2::ggplot(all_mle_data_with_selection_stats[patient==this_patient & method!="AICm",],ggplot2::aes(x=s,y=lML,color=method))+
+      this_patient_plot <- ggplot2::ggplot(all_mle_data_with_selection_stats[patient==this_patient & method!="AICm",],ggplot2::aes(x=S,y=lML,color=method))+
         ggplot2::geom_point(alpha=0.8) +
         ggplot2::geom_smooth(alpha=0.2,linewidth=0.3) +
         ggplot2::geom_hline(data=these_thresholds,ggplot2::aes(yintercept=minY,color=method,linetype="BF10")) +
