@@ -38,3 +38,31 @@ run <- function(script) {
                  args = c(path, args))
   invisible(res)
 }
+
+#' Writes a CSV file if flag is not null
+#'
+#' @param table table to write in CSV
+#' @param flag print if !is.null. Usually the filename or a filename part
+#' @param outdir output directory. It will be made recursively if it does not exist, without warnings
+#' @param filename name of the csv file. If null, flag is used
+#' @param canceled_warning warning to produce if the file is not written
+#'
+#' @returns TRUE if the file was written, FALSE otherwise
+#'
+#' @keywords internal
+
+check_write_csv <- function(table,flag,outdir,filename=NULL,canceled_warning=NULL){
+  if(is.null(filename))
+    filename <- flag
+
+  if(!is.null(flag)) {
+    if(!dir.exists(outdir))
+      dir.create(outdir,showWarnings = FALSE,recursive = TRUE)
+    utils::write.csv(table,file = paste(sep="/",outdir,filename),quote = FALSE,row.names = FALSE)
+    return(TRUE)
+  } else {
+    if(!is.null(canceled_warning))
+      warning(canceled_warning)
+  }
+  return(FALSE)
+}

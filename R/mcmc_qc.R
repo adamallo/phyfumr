@@ -707,11 +707,11 @@ mcmc_qc_patient <- function(trees_files,
   #######################################
 
   #All convergence statistics
-  if(!is.null(all_output_suffix)){
-    utils::write.csv(convergence,file = paste0(out_dir,"/",paste(sep="_",base_name,all_output_suffix)),quote = FALSE,row.names = FALSE)
-  } else {
-    warning("Mixing and convergence summary table deactivated. If you need it, make sure to indicate a suffix using the all_output_suffix argument")
-  }
+  check_write_csv(convergence,
+                  all_output_suffix,
+                  out_dir,
+                  paste(sep="_",base_name,all_output_suffix),
+                  "Mixing and convergence summary table deactivated. If you need it, make sure to indicate a suffix using the all_output_suffix argument")
 
   #Parameters that do not meet certain standards
   #For now, we consider that a param has a problem if:
@@ -723,11 +723,11 @@ mcmc_qc_patient <- function(trees_files,
                          #convergence[chain=="ALL",lapply(.SD,FUN = function(x){any(is.na(x)) | any(x>maxCV)}),keyby=param,.SDcols=c("medianPCV","meanPCV")][,-"param"])
   problematic_params <- problematic_params[,.(param,problem=any(.SD)),.SDcols=colnames(problematic_params)[!colnames(problematic_params)%in%c("param")],by=.I][problem==T,param]
 
-  if(!is.null(problematic_output_suffix)){
-    utils::write.csv(convergence[param %in% problematic_params],file = paste0(out_dir,"/",paste(sep="_",base_name,problematic_output_suffix)),quote = FALSE,row.names = FALSE)
-  } else {
-    warning("Automatic parameter flagging output deactivated. If you need it, make sure to indicate a suffix using the problematic_output_suffix argument")
-  }
+  check_write_csv(convergence[param %in% problematic_params],
+                  problematic_output_suffix,
+                  out_dir,
+                  paste(sep="_",base_name,problematic_output_suffix),
+                  "Automatic parameter flagging output deactivated. If you need it, make sure to indicate a suffix using the problematic_output_suffix argument")
 
   #Analyze and communicate the number of problematic parameters
   #if only tree topology, warn that they should still be checked by eye and that it may be ok if the number of leaves is small. Show the number of leaves?
@@ -746,7 +746,7 @@ mcmc_qc_patient <- function(trees_files,
     this_lml <- LaplacesDemon::LML(LL=these_data[burnin==FALSE,likelihood],method="HME")$LML
     this_AICm <- AICM(these_data[burnin==FALSE,likelihood])
     mle_table <- data.table::data.table(cond=c(base_name),method=c("HME","AICm"),lML=c(this_lml,this_AICm))
-    utils::write.csv(mle_table,file = paste0(out_dir,"/",paste(sep="_",base_name,mle_suffix)),quote = FALSE,row.names = FALSE)
+    check_write_csv(mle_table,T,out_dir,paste(sep="_",base_name,mle_suffix))
   } else {
     warning("Marginal likelihood estimation deactivated. If you need it, make sure to indicate an output file suffix using the mle_suffix argument")
   }
