@@ -29,7 +29,7 @@ run_name <- gsub(x = basename(files[1]),pattern = ".trees$",replacement = "")
 print(paste0("Saving outputs in ",out_dir)) #ForPablo: remove?
 #######################################
 
-capture.output(mcmc_qc_patient(files,
+capture.output(mcmc_qc_condition(files,
                                out_dir = out_dir,
                                plot_dir = out_dir,
                                n_cores = 1,

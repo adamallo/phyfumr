@@ -4,7 +4,17 @@
 \alias{mcmc_qc}
 \title{Complete MCMC QC per experiment}
 \usage{
-mcmc_qc(file_dir, out_dir, plot_dir, n_cores, ...)
+mcmc_qc(
+  file_dir,
+  out_dir,
+  plot_dir,
+  n_cores,
+  problematic_output = "problematicParams.csv",
+  all_output = "allParams.csv",
+  mle_output = "MLE.csv",
+  conditions_with_issues_output = "problematicConditions.csv",
+  ...
+)
 }
 \arguments{
 \item{file_dir}{directory that contains .trees and .log files (with or
@@ -17,8 +27,22 @@ without subdirectories)}
 \item{n_cores}{number of cores to use for coarse-grained parallelization (per
 patient)}
 
+\item{problematic_output}{filename of the tabular output with a list of
+parameters that may have mixing/convergence problems. If NULL, this output
+is not generated.}
+
+\item{all_output}{filename of the tabular output with all mixing and
+convergence statistics. If NULL, this output is not generated..}
+
+\item{mle_output}{filename of the tabular output with marginal likelihood
+estimations using HME and AICm methods.}
+
+\item{conditions_with_issues_output}{output filename for a summary table that
+lists conditions with topological or continuous parameter convergence
+issues. If NULL, this output is not generated.}
+
 \item{...}{
-  Arguments passed on to \code{\link[=mcmc_qc_patient]{mcmc_qc_patient}}
+  Arguments passed on to \code{\link[=mcmc_qc_condition]{mcmc_qc_condition}}
   \describe{
     \item{\code{burnin_p}}{proportion of input traces to be discarded as burnin}
     \item{\code{min_ess}}{minimum ESS. Parameters with ESS under this value will be
@@ -26,38 +50,36 @@ flagged as problematic}
     \item{\code{max_rhat}}{maximum Rhat \code{\link[rstan:Rhat]{rstan::Rhat()}}. Parameters with Rhat higher
 than this will be flagged as problematic}
     \item{\code{cred_mass}}{credibility mass to determine high density intervals}
-    \item{\code{n_focal_trees}}{number of focal trees to calculate a tree distance to
-estimate topological convergence using the pseudo-ESS method}
     \item{\code{treedist}}{tree distance used for the topological pseudo-ESS}
     \item{\code{base_name}}{common name to use as prefix for all outputs to share output
 folders between patients. By default, the name of the .trees files is used}
     \item{\code{problematic_output_suffix}}{suffix for the filename of the tabular
 output with a list of parameters that may have mixing/convergence problems.
 If NULL, this output is not generated.}
-    \item{\code{all_output_suffix}}{suffix for the filename of the tabular output with
-all mixing and convergence statistics. If NULL, this output is not
-generated.}
     \item{\code{posterior_plots_suffix}}{suffix for the marginal density plots file. If
 NULL, this output is not generated.}
     \item{\code{rwty_plots_suffix}}{suffix for the RWTY plots. If NULL, this output is
 not generated.}
-    \item{\code{correlation_plots_suffix}}{suffix for the RWTY correlation plots. If
-NULL, this output is not generated.}
     \item{\code{mle_suffix}}{suffix for the tabular output with marginal likelihood
 estimations using HME and AICm methods.}
   }}
 }
 \value{
-data.table with convergence statistics, with a column indicating the
-condition (i.e., filename of the input file without .trees)
+list with data.tables with all = convergence statistics, problematic
+= parameter with problems, MLE = mle estimation table data.table. Each has
+a column indicating the condition (i.e., filename of the input file without
+.trees)
 }
 \description{
-This function uses \code{\link[=mcmc_qc_patient]{mcmc_qc_patient()}} to generate plots and tables to aid
+This function uses \code{\link[=mcmc_qc_condition]{mcmc_qc_condition()}} to generate plots and tables to aid
 assessing phyfum's mixing and convergence. It can use several chains per run,
-and automatically flags some issues using Rhat and ESS.
+and automatically flags some issues using Rhat and ESS. Depending on your
+computer resources and the size of your experiment this function may be quite
+slow and could be worth using \code{\link[=mcmc_qc_condition]{mcmc_qc_condition()}} per condition in a HPC,
+then use \code{\link[=mcmc_qc_gather]{mcmc_qc_gather()}} to gather the results like this function does.
 }
 \details{
-all .trees files within the objective directory will be analized.
+all .trees files within the objective directory will be analyzed.
 Files with the same name will be considered independent phyfum runs under
 the same conditions.
 }

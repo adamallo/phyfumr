@@ -4,7 +4,7 @@
 #'
 #' @details HME (harmonic mean estimator) is always available and, in our simulations, works well for this specific purpose despite the well-known problems it has for model selection overall. SS and PS are the preferred methods but phyfum runs with MLE (marginal likelihood estimation) activated are required and they take at least twice the time to run. This function goes down the preference list until finding a method for which it has lML data for all the S to work and uses that one.
 #'
-#' @param in_dir input directory where the MLE.csv files resulting from [mcmc_qc()] or [mcmc_qc_patient()] are
+#' @param in_dir input directory where the MLE.csv files resulting from [mcmc_qc()] or [mcmc_qc_condition()] are
 #' @param out_dir output directory to write .csv files with model selection information
 #' @param plot_dir plot output directory
 #' @param method sorted list of preferred methods to estimate the marginal likelihood for model selection
@@ -58,7 +58,7 @@ model_selection <- function(in_dir,
 
   #Data parsing
   all_mle_data <- data.table::rbindlist(lapply(input_files,data.table::fread),idcol = "file")
-  all_mle_data[,`:=`(patient=gsub(basename_regex,"",cond),S=as.numeric(gsub(n_cells_regex,"\\1",cond)))]
+  all_mle_data[,`:=`(patient=gsub(basename_regex,"",condition),S=as.numeric(gsub(n_cells_regex,"\\1",condition)))]
 
   #Model selection
   all_mle_data_with_selection_stats <- data.table::rbindlist(lapply(split(all_mle_data,by="patient"),function(this_data,min_bf){
@@ -66,7 +66,7 @@ model_selection <- function(in_dir,
     method_analysis <- this_data[,.N,by=method][,`:=`(valid_method=N==n_S)][method,.SD,on="method"][valid_method==T,`:=`(method_order=.I)]
     new_data <- data.table::copy(this_data)
     new_data[method=="AICm",`:=`(lML=lML*-1)] #AICm's lML is the AICm not the lML and thus needs to be inverted for selection. Additionally, we can't use BFs with it.
-    new_data <- new_data[order(-lML),.(file,cond,best=lML==data.table::first(lML),
+    new_data <- new_data[order(-lML),.(file,condition,best=lML==data.table::first(lML),
                                        lML,S,selected=max(lML)-lML<=min_bf,min_S=min(S),max_S=max(S),
                                        extreme_best=lML==data.table::first(lML)&(S==max(S)|S==min(S)),
                                        extreme_valid=max(lML)-lML<=min_bf&(S==max(S)|S==min(S))),by=method]

@@ -472,7 +472,7 @@ write_continuous_parameter_plots <- function(thedata,params,out_dir,out_name,ndi
 #Integrative functions (i.e. pipelines)
 #######################################
 
-#' Complete MCMC QC per patient
+#' Complete MCMC QC per condition (patient and S parameter value)
 #'
 #' This function generates plots and tables to aid assessing phyfum's mixing and
 #' convergence. It can use several chains per run, and automatically flags some
@@ -519,10 +519,10 @@ write_continuous_parameter_plots <- function(thedata,params,out_dir,out_name,ndi
 #'   Otherwise, it fixes the number of cores that rwty and data.table will use.
 #'   They never run in parallel so both can use the maximum number of cores
 #' @inheritDotParams fix_nexus backup
-#' @returns data.table with convergence statistics
+#' @returns list with data.tables with all = convergence statistics, problematic = parameter with problems, MLE = mle estimation table
 #' @export
 
-mcmc_qc_patient <- function(trees_files,
+mcmc_qc_condition <- function(trees_files,
                             log_files=NULL,
                             out_dir,
                             plot_dir,
@@ -535,8 +535,8 @@ mcmc_qc_patient <- function(trees_files,
                             n_cores=NULL,
                             #maxCV=??,
                             base_name = NULL,
-                            problematic_output_suffix="problematicParams.csv",
-                            all_output_suffix="allParams.csv",
+                            problematic_output_suffix = "problematicParams.csv",
+                            all_output_suffix = "allParams.csv",
                             posterior_plots_suffix = "plotPosteriorDensities.pdf",
                             rwty_plots_suffix = "plotsRWTY.pdf",
                             correlation_plots_suffix = "plotCorrelations.jpeg",
@@ -742,14 +742,16 @@ mcmc_qc_patient <- function(trees_files,
 
   #Get marginal likelihood estimates from the posterior sample and write them
   #######################################
-  if(!is.null(mle_suffix)){
-    this_lml <- LaplacesDemon::LML(LL=these_data[burnin==FALSE,likelihood],method="HME")$LML
-    this_AICm <- AICM(these_data[burnin==FALSE,likelihood])
-    mle_table <- data.table::data.table(cond=c(base_name),method=c("HME","AICm"),lML=c(this_lml,this_AICm))
-    check_write_csv(mle_table,T,out_dir,paste(sep="_",base_name,mle_suffix))
-  } else {
-    warning("Marginal likelihood estimation deactivated. If you need it, make sure to indicate an output file suffix using the mle_suffix argument")
-  }
+  this_lml <- LaplacesDemon::LML(LL=these_data[burnin==FALSE,likelihood],method="HME")$LML
+  this_AICm <- AICM(these_data[burnin==FALSE,likelihood])
+  mle_table <- data.table::data.table(cond=c(base_name),method=c("HME","AICm"),lML=c(this_lml,this_AICm))
+
+  check_write_csv(mle_table,
+                  mle_suffix,
+                  out_dir,
+                  paste(sep="_",base_name,mle_suffix),
+                  "Marginal likelihood estimation deactivated. If you need it, make sure to indicate an output file suffix using the mle_suffix argument")
+
   #######################################
 
   #RWTY's citation scheme
@@ -759,33 +761,57 @@ mcmc_qc_patient <- function(trees_files,
   #      citation("ggdendro"), citation("GGally"), citation("plyr"),
   #      citation("reshape2"), citation("stats")))
 
-  return(convergence)
+  return(list("all"=convergence,
+              "problematic"=convergence[param %in% problematic_params],
+              "mle"=mle_table))
 }
 
 #' Complete MCMC QC per experiment
 #'
-#' This function uses [mcmc_qc_patient()] to generate plots and tables to aid
+#' This function uses [mcmc_qc_condition()] to generate plots and tables to aid
 #' assessing phyfum's mixing and convergence. It can use several chains per run,
-#' and automatically flags some issues using Rhat and ESS.
+#' and automatically flags some issues using Rhat and ESS. Depending on your
+#' computer resources and the size of your experiment this function may be quite
+#' slow and could be worth using [mcmc_qc_condition()] per condition in a HPC,
+#' then use [mcmc_qc_gather()] to gather the results like this function does.
 #'
-#' @details all .trees files within the objective directory will be analized.
+#' @details all .trees files within the objective directory will be analyzed.
 #'   Files with the same name will be considered independent phyfum runs under
 #'   the same conditions.
 #'
 #' @param file_dir directory that contains .trees and .log files (with or
 #'   without subdirectories)
-#' @inheritParams mcmc_qc_patient
+#' @inheritParams mcmc_qc_condition
 #' @param n_cores number of cores to use for coarse-grained parallelization (per
 #'   patient)
-#' @inheritDotParams mcmc_qc_patient burnin_p min_ess max_rhat cred_mass n_focal_trees treedist n_cores base_name problematic_output_suffix all_output_suffix posterior_plots_suffix rwty_plots_suffix correlation_plots_suffix mle_suffix
-#' @returns data.table with convergence statistics, with a column indicating the
-#'   condition (i.e., filename of the input file without .trees)
+#' @param problematic_output filename of the tabular output with a list of
+#'   parameters that may have mixing/convergence problems. If NULL, this output
+#'   is not generated.
+#' @param all_output filename of the tabular output with all mixing and
+#'   convergence statistics. If NULL, this output is not generated..
+#' @param mle_output filename of the tabular output with marginal likelihood
+#'   estimations using HME and AICm methods.
+#' @param conditions_with_issues_output output filename for a summary table that
+#'   lists conditions with topological or continuous parameter convergence
+#'   issues. If NULL, this output is not generated.
+#' @inheritDotParams mcmc_qc_condition burnin_p min_ess max_rhat cred_mass
+#'   n_focal_trees treedist n_cores base_name problematic_output_suffix
+#'   all_output_suffix posterior_plots_suffix rwty_plots_suffix
+#'   correlation_plots_suffix mle_suffix
+#' @returns list with data.tables with all = convergence statistics, problematic
+#'   = parameter with problems, MLE = mle estimation table data.table. Each has
+#'   a column indicating the condition (i.e., filename of the input file without
+#'   .trees)
 #' @export
 
 mcmc_qc <- function(file_dir,
                     out_dir,
                     plot_dir,
                     n_cores,
+                    problematic_output = "problematicParams.csv",
+                    all_output = "allParams.csv",
+                    mle_output = "MLE.csv",
+                    conditions_with_issues_output = "problematicConditions.csv",
                     ...){
 
   trees_files <- list.files(path = file_dir, pattern = "*.trees$",
@@ -797,14 +823,99 @@ mcmc_qc <- function(file_dir,
                                                                    replacement = "",
                                                                    x = run_names))
 
-  all_results <- data.table::rbindlist(slapply(split(runs_info,by="run_names"),function(this_data,out_dir,plot_dir){
+  all_results <- slapply(split(runs_info,by="run_names"),function(this_data,out_dir,plot_dir){
     this_trees_files <- this_data[,trees_files]
-    mcmc_qc_patient(trees_files = this_trees_files,
+    mcmc_qc_condition(trees_files = this_trees_files,
                     out_dir = out_dir,
                     plot_dir = plot_dir,
                     n_cores = 1,
                     ...)
-  },out_dir=out_dir,plot_dir=plot_dir,cl=n_cores),idcol = "condition")
+  },out_dir=out_dir,plot_dir=plot_dir,cl=n_cores)
 
-  return(all_results)
+  #binding each of the lists across conditions
+  keys <- names(all_results[[1]])
+  all_results_merged <- lapply(keys, function(k) {
+    data.table::rbindlist(lapply(all_results, `[[`, k), idcol = "condition")
+  })
+  names(all_results_merged) <- keys
+
+  #mle already had a cond field so I am removing it here
+  if(!is.null(all_results_merged$mle))
+    all_results_merged$mle[,`:=`(cond=NULL)]
+
+
+  #writing the combined versions
+  check_write_csv(all_results_merged$all,
+                  all_output,
+                  out_dir)
+  check_write_csv(all_results_merged$problematic,
+                  problematic_output,
+                  out_dir)
+  check_write_csv(all_results_merged$mle,
+                  mle_output,
+                  out_dir)
+
+  #summary with problematic conditions
+  check_write_csv(all_results_merged$problematic[,.(topology=length(grep("treeTopology",param))>1,param=length(grep("treeTopology",param,invert = TRUE))>1),by=condition],
+                  conditions_with_issues_output,
+                  out_dir)
+
+  return(all_results_merged)
+}
+
+#' Gather and summarize MCMC QC per experiment
+#'
+#' This function collects and summarizes the results from [mcmc_qc_condition()]. It is an alternative to [mcmc_qc()] when [mcmc_qc_condition()] is run in parallel using multiple computers (typicaly an HPC cluster).
+#'
+#' @details all .trees files within the objective directory will be analized.
+#'   Files with the same name will be considered independent phyfum runs under
+#'   the same conditions.
+#'
+#' @param out_dir output directory where all the [mcmc_qc_condition()] outputs are located, which will also be where the output of this function will be located (as [mcmc_qc()])
+#' @inheritParams mcmc_qc_condition
+#' @inherit mcmc_qc params return
+#'
+#' @export
+
+mcmc_qc_gather <- function(out_dir,
+                    problematic_output_suffix = "problematicParams.csv",
+                    all_output_suffix = "allParams.csv",
+                    mle_suffix = "MLE.csv",
+                    problematic_output = "problematicParams.csv",
+                    all_output = "allParams.csv",
+                    mle_output = "MLE.csv",
+                    conditions_with_issues_output = "problematicConditions.csv"){
+
+  list_names <- c(all_output_suffix,problematic_output_suffix,mle_suffix)
+  all_files <- lapply(list_names,function(x,path,full.names){
+    these_files <- list.files(pattern=paste0('..*',x),path=path,full.names=full.names)
+    names(these_files) <- gsub(pattern = paste0(".",x),replacement = "",x = basename(these_files))
+    return(these_files)
+    },path=out_dir,full.names=T)
+  names(all_files) <- list_names
+
+  all_results_merged <- lapply(list_names,function(type){data.table::rbindlist(lapply(all_files[[type]],data.table::fread),idcol = "condition")})
+  names(all_results_merged) <- c("all","problematic","mle")
+
+  #mle already had a cond field so I am removing it here
+  if(!is.null(all_results_merged$mle))
+    all_results_merged$mle[,`:=`(cond=NULL)]
+
+  #writing the combined versions
+  check_write_csv(all_results_merged$all,
+                  all_output,
+                  out_dir)
+  check_write_csv(all_results_merged$problematic,
+                  problematic_output,
+                  out_dir)
+  check_write_csv(all_results_merged$mle,
+                  mle_output,
+                  out_dir)
+
+  #summary with problematic conditions
+  check_write_csv(all_results_merged$problematic[,.(topology=length(grep("treeTopology",param))>1,param=length(grep("treeTopology",param,invert = TRUE))>1),by=condition],
+                  conditions_with_issues_output,
+                  out_dir)
+
+  return(all_results_merged)
 }
