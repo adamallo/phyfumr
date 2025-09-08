@@ -112,6 +112,9 @@ model_selection <- function(in_dir,
   },min_bf=min_bf),idcol = "patient")
 
   #Output
+  dir.create(out_dir,recursive = T,showWarnings = F)
+  dir.create(plot_dir,recursive = T,showWarnings = F)
+
   check_write_csv(all_mle_data_with_selection_stats[order(method_order),][best==T,.(patient,method,S,lML,extreme_best)],
                   bestS_output_suffix,
                   out_dir)
