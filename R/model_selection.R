@@ -2,25 +2,58 @@
 
 #' Selects candidate and best S and performs QC of these selections
 #'
-#' @details HME (harmonic mean estimator) is always available and, in our simulations, works well for this specific purpose despite the well-known problems it has for model selection overall. SS and PS are the preferred methods but phyfum runs with MLE (marginal likelihood estimation) activated are required and they take at least twice the time to run. This function goes down the preference list until finding a method for which it has lML data for all the S to work and uses that one.
+#' @details HME (harmonic mean estimator) is always available and, in our
+#'   simulations, works well for this specific purpose despite the well-known
+#'   problems it has for model selection overall. SS and PS are the preferred
+#'   methods but phyfum runs with MLE (marginal likelihood estimation) activated
+#'   are required and they take at least twice the time to run. This function
+#'   goes down the preference list until finding a method for which it has lML
+#'   data for all the S to work and uses that one.
 #'
-#' @param in_dir input directory where the MLE.csv files resulting from [mcmc_qc()] or [mcmc_qc_condition()] are
-#' @param out_dir output directory to write .csv files with model selection information
+#' @param in_dir input directory where the MLE.csv files resulting from
+#'   [mcmc_qc()] or [mcmc_qc_condition()] are
+#' @param out_dir output directory to write .csv files with model selection
+#'   information
 #' @param plot_dir plot output directory
-#' @param method sorted list of preferred methods to estimate the marginal likelihood for model selection
-#' @param min_bf minimum Bayes Factor to consider a model (S value) as a valid alternative to the best-fit
-#' @param file_regex R regular expression to locate the files that contain the MLE estimation information. The default should work unless [mcmc_qc()] output filenames were modified
-#' @param n_cells_regex R regular expression with a group that captures the S number from the MLE.csv filename. Again, the default should work (see file_regex)
-#' @param basename_regex R regular expression to substitute with "" to generate the condition name from the MLE.csv filename. Again, the default should work (see file_regex)
-#' @param by_patient Logical to activate patient-specific tables (usually not needed)
-#' @param warn_extremes Logical to activate warning messages indicating cases for which additional phyfum runs with other S values should be performed to improve S model selection
+#' @param method sorted list of preferred methods to estimate the marginal
+#'   likelihood for model selection
+#' @param min_bf minimum Bayes Factor to consider a model (S value) as a valid
+#'   alternative to the best-fit
+#' @param file_regex R regular expression to locate the files that contain the
+#'   MLE estimation information. The default should work unless [mcmc_qc()]
+#'   output filenames were modified. You can use "^MLE.csv$" instead of the
+#'   default ".MLE.csv$ to increase the speed if [mcmc_qc()] or
+#'   [mcmc_qc_gather()] were run before (instead of just [mcmc_qc_condition()]
+#'   distributed)
+#' @param n_cells_regex R regular expression with a group that captures the S
+#'   number from the MLE.csv filename. Again, the default should work (see
+#'   file_regex)
+#' @param basename_regex R regular expression to substitute with "" to generate
+#'   the cond name from the MLE.csv filename. Again, the default should work
+#'   (see file_regex)
+#' @param by_patient Logical to activate patient-specific tables (usually not
+#'   needed)
+#' @param warn_extremes Logical to activate warning messages indicating cases
+#'   for which additional phyfum runs with other S values should be performed to
+#'   improve S model selection
 #' @param plot_aspect_ratio aspect ratio for the S model selection plots
-#' @param all_output_suffix filename (or suffix for by_patient output) for the table with all the selection results
+#' @param all_output_suffix filename (or suffix for by_patient output) for the
+#'   table with all the selection results
 #' @param plot_output_suffix suffix for S model selection plots
-#' @param selected_output_suffix filename (or suffix for by_patient output) for the table with the selected S values (using the BF to the best S) per patient
-#' @param bestS_output_suffix filename (or suffix for by_patient output) for the table with the best S value per patient
-#' @param extreme_selected_output_suffix filename (or suffix for by_patient output) for the table that contains cases for which a S value that is valid according to the BF against the best-fit model is a extreme value (i.e., more S values should be assessed to know if more S values would be included in the final selection)
-#' @param extreme_valid_output_suffix filename (or suffix for by_patient output) for the table that contains cases for which the best-fit S value was an extreme value in the current sampling (i.e., more S values should be assessed to know if a different S value will better this one)
+#' @param selected_output_suffix filename (or suffix for by_patient output) for
+#'   the table with the selected S values (using the BF to the best S) per
+#'   patient
+#' @param bestS_output_suffix filename (or suffix for by_patient output) for the
+#'   table with the best S value per patient
+#' @param extreme_selected_output_suffix filename (or suffix for by_patient
+#'   output) for the table that contains cases for which a S value that is valid
+#'   according to the BF against the best-fit model is a extreme value (i.e.,
+#'   more S values should be assessed to know if more S values would be included
+#'   in the final selection)
+#' @param extreme_valid_output_suffix filename (or suffix for by_patient output)
+#'   for the table that contains cases for which the best-fit S value was an
+#'   extreme value in the current sampling (i.e., more S values should be
+#'   assessed to know if a different S value will better this one)
 #'
 #' @returns data.table with all selection information
 #' @export
@@ -30,7 +63,7 @@ model_selection <- function(in_dir,
                             plot_dir=NULL,
                             method = c("PS","SS","HME","AICm"),
                             min_bf = 10,
-                            file_regex = ".MLE.csv$",
+                            file_regex = ".MLE.csv$", #"^MLE.csv$" would use the result of mcmc_qc or mcmc_qc_gather and be a little faster, but this way we do not require that step
                             n_cells_regex = ".*\\.([0-9]+)cells\\..*",
                             basename_regex = "\\.[0-9]+cells\\..*",
                             by_patient = F,
@@ -58,7 +91,8 @@ model_selection <- function(in_dir,
 
   #Data parsing
   all_mle_data <- data.table::rbindlist(lapply(input_files,data.table::fread),idcol = "file")
-  all_mle_data[,`:=`(patient=gsub(basename_regex,"",condition),S=as.numeric(gsub(n_cells_regex,"\\1",condition)))]
+  cond_col <- grep("^cond",colnames(all_mle_data),value=T)
+  all_mle_data[,`:=`(patient=gsub(basename_regex,"",get(cond_col)),S=as.numeric(gsub(n_cells_regex,"\\1",get(cond_col))))]
 
   #Model selection
   all_mle_data_with_selection_stats <- data.table::rbindlist(lapply(split(all_mle_data,by="patient"),function(this_data,min_bf){
@@ -66,7 +100,7 @@ model_selection <- function(in_dir,
     method_analysis <- this_data[,.N,by=method][,`:=`(valid_method=N==n_S)][method,.SD,on="method"][valid_method==T,`:=`(method_order=.I)]
     new_data <- data.table::copy(this_data)
     new_data[method=="AICm",`:=`(lML=lML*-1)] #AICm's lML is the AICm not the lML and thus needs to be inverted for selection. Additionally, we can't use BFs with it.
-    new_data <- new_data[order(-lML),.(file,condition,best=lML==data.table::first(lML),
+    new_data <- new_data[order(-lML),.(file,get(cond_col),best=lML==data.table::first(lML),
                                        lML,S,selected=max(lML)-lML<=min_bf,min_S=min(S),max_S=max(S),
                                        extreme_best=lML==data.table::first(lML)&(S==max(S)|S==min(S)),
                                        extreme_valid=max(lML)-lML<=min_bf&(S==max(S)|S==min(S))),by=method]
