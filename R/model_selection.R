@@ -87,6 +87,9 @@ model_selection <- function(in_dir,
   input_files <- list.files(path = in_dir,
                             pattern = file_regex,
                             full.names = T)
+  if(length(input_files)<1)
+    stop("MLE files not found")
+
   names(input_files) <- basename(input_files)
 
   #Data parsing
