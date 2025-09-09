@@ -2,20 +2,19 @@
 % Please edit documentation in R/mcmc_qc.R
 \name{remove_burnin}
 \alias{remove_burnin}
-\title{Updates RWTY chains removing burnin states in parameter and tree objects for
-multiple MCMC chains}
+\title{Removes burnin states in RWTY chain lists}
 \usage{
-remove_burnin(chains)
+remove_burnin(chains, burnin_p)
 }
 \arguments{
 \item{chains}{MCMC data. List of \code{\link[rwty:load.trees]{rwty::load.trees()}} values}
+
+\item{burnin_p}{Proportion of MCMC samples to discard as burnin}
 }
 \value{
-new chains
+list of RWTY chains with burnin samples removed
 }
 \description{
-Data can be extracted and burnin tagged using \code{\link[=extract_ptable]{extract_ptable()}}, modified
-manually if desired, and added back using \code{\link[=update_ptable]{update_ptable()}}. This function,
-removes burnin states marked in a column called burnin (T: removed, F: kept)
+Removes burnin states in RWTY chain lists
 }
 \keyword{internal}

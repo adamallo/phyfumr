@@ -4,7 +4,12 @@
 \alias{generate_tree_trace_reftree}
 \title{Generates a trace of tree distances from a focal tree}
 \usage{
-generate_tree_trace_reftree(tree_list, treedist = c("PD", "RF"), tree_i = NULL)
+generate_tree_trace_reftree(
+  tree_list,
+  treedist = c("PD", "RF"),
+  tree_i = NULL,
+  focal_tree = NULL
+)
 }
 \arguments{
 \item{tree_list}{list of trees}
@@ -14,6 +19,8 @@ focal tree ("PD" or "RF")}
 
 \item{tree_i}{pre-specified element of tree_list that should be used as
 reference tree. If NULL (default) it is sampled at random from tree_dist}
+
+\item{focal_tree}{focal tree to use instead of sampling it from the chain}
 }
 \value{
 array of tree distances

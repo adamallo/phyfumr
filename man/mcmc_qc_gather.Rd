@@ -16,7 +16,9 @@ mcmc_qc_gather(
 )
 }
 \arguments{
-\item{out_dir}{output directory where all the \code{\link[=mcmc_qc_condition]{mcmc_qc_condition()}} outputs are located, which will also be where the output of this function will be located (as \code{\link[=mcmc_qc]{mcmc_qc()}})}
+\item{out_dir}{output directory where all the \code{\link[=mcmc_qc_condition]{mcmc_qc_condition()}} outputs
+are located, which will also be where the output of this function will be
+located (as \code{\link[=mcmc_qc]{mcmc_qc()}})}
 
 \item{problematic_output_suffix}{suffix for the filename of the tabular
 output with a list of parameters that may have mixing/convergence problems.
@@ -50,7 +52,9 @@ a column indicating the condition (i.e., filename of the input file without
 .trees)
 }
 \description{
-This function collects and summarizes the results from \code{\link[=mcmc_qc_condition]{mcmc_qc_condition()}}. It is an alternative to \code{\link[=mcmc_qc]{mcmc_qc()}} when \code{\link[=mcmc_qc_condition]{mcmc_qc_condition()}} is run in parallel using multiple computers (typicaly an HPC cluster).
+This function collects and summarizes the results from \code{\link[=mcmc_qc_condition]{mcmc_qc_condition()}}.
+It is an alternative to \code{\link[=mcmc_qc]{mcmc_qc()}} when \code{\link[=mcmc_qc_condition]{mcmc_qc_condition()}} is run in
+parallel using multiple computers (typicaly an HPC cluster).
 }
 \details{
 all .trees files within the objective directory will be analized.

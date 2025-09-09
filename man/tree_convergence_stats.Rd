@@ -34,7 +34,8 @@ chains and by chain (otherwise, using all of them only)}
 \item{cl}{cl settings for \code{\link[pbapply:pbapply]{pbapply::pblapply()}} if available}
 }
 \value{
-data.table with a row per parameter and colums for Rhat, ESS-bulk, and ESS-tail, median, mean, and HDI interval (HDILower and HDIUpper)
+data.table with a row per parameter and colums for Rhat, ESS-bulk,
+and ESS-tail, median, mean, and HDI interval (HDILower and HDIUpper)
 }
 \description{
 Generates a table with tree convergence statistics using the pseudo ESS

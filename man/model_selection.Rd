@@ -25,39 +25,66 @@ model_selection(
 )
 }
 \arguments{
-\item{in_dir}{input directory where the MLE.csv files resulting from \code{\link[=mcmc_qc]{mcmc_qc()}} or \code{\link[=mcmc_qc_condition]{mcmc_qc_condition()}} are}
+\item{in_dir}{input directory where the MLE.csv files resulting from
+\code{\link[=mcmc_qc]{mcmc_qc()}} or \code{\link[=mcmc_qc_condition]{mcmc_qc_condition()}} are}
 
-\item{out_dir}{output directory to write .csv files with model selection information}
+\item{out_dir}{output directory to write .csv files with model selection
+information}
 
 \item{plot_dir}{plot output directory}
 
-\item{method}{sorted list of preferred methods to estimate the marginal likelihood for model selection}
+\item{method}{sorted list of preferred methods to estimate the marginal
+likelihood for model selection}
 
-\item{min_bf}{minimum Bayes Factor to consider a model (S value) as a valid alternative to the best-fit}
+\item{min_bf}{minimum Bayes Factor to consider a model (S value) as a valid
+alternative to the best-fit}
 
-\item{file_regex}{R regular expression to locate the files that contain the MLE estimation information. The default should work unless \code{\link[=mcmc_qc]{mcmc_qc()}} output filenames were modified}
+\item{file_regex}{R regular expression to locate the files that contain the
+MLE estimation information. The default should work unless \code{\link[=mcmc_qc]{mcmc_qc()}}
+output filenames were modified. You can use "^MLE.csv$" instead of the
+default ".MLE.csv$ to increase the speed if \code{\link[=mcmc_qc]{mcmc_qc()}} or
+\code{\link[=mcmc_qc_gather]{mcmc_qc_gather()}} were run before (instead of just \code{\link[=mcmc_qc_condition]{mcmc_qc_condition()}}
+distributed)}
 
-\item{n_cells_regex}{R regular expression with a group that captures the S number from the MLE.csv filename. Again, the default should work (see file_regex)}
+\item{n_cells_regex}{R regular expression with a group that captures the S
+number from the MLE.csv filename. Again, the default should work (see
+file_regex)}
 
-\item{basename_regex}{R regular expression to substitute with "" to generate the condition name from the MLE.csv filename. Again, the default should work (see file_regex)}
+\item{basename_regex}{R regular expression to substitute with "" to generate
+the cond name from the MLE.csv filename. Again, the default should work
+(see file_regex)}
 
-\item{by_patient}{Logical to activate patient-specific tables (usually not needed)}
+\item{by_patient}{Logical to activate patient-specific tables (usually not
+needed)}
 
-\item{warn_extremes}{Logical to activate warning messages indicating cases for which additional phyfum runs with other S values should be performed to improve S model selection}
+\item{warn_extremes}{Logical to activate warning messages indicating cases
+for which additional phyfum runs with other S values should be performed to
+improve S model selection}
 
 \item{plot_aspect_ratio}{aspect ratio for the S model selection plots}
 
-\item{all_output_suffix}{filename (or suffix for by_patient output) for the table with all the selection results}
+\item{all_output_suffix}{filename (or suffix for by_patient output) for the
+table with all the selection results}
 
 \item{plot_output_suffix}{suffix for S model selection plots}
 
-\item{selected_output_suffix}{filename (or suffix for by_patient output) for the table with the selected S values (using the BF to the best S) per patient}
+\item{selected_output_suffix}{filename (or suffix for by_patient output) for
+the table with the selected S values (using the BF to the best S) per
+patient}
 
-\item{bestS_output_suffix}{filename (or suffix for by_patient output) for the table with the best S value per patient}
+\item{bestS_output_suffix}{filename (or suffix for by_patient output) for the
+table with the best S value per patient}
 
-\item{extreme_selected_output_suffix}{filename (or suffix for by_patient output) for the table that contains cases for which a S value that is valid according to the BF against the best-fit model is a extreme value (i.e., more S values should be assessed to know if more S values would be included in the final selection)}
+\item{extreme_selected_output_suffix}{filename (or suffix for by_patient
+output) for the table that contains cases for which a S value that is valid
+according to the BF against the best-fit model is a extreme value (i.e.,
+more S values should be assessed to know if more S values would be included
+in the final selection)}
 
-\item{extreme_valid_output_suffix}{filename (or suffix for by_patient output) for the table that contains cases for which the best-fit S value was an extreme value in the current sampling (i.e., more S values should be assessed to know if a different S value will better this one)}
+\item{extreme_valid_output_suffix}{filename (or suffix for by_patient output)
+for the table that contains cases for which the best-fit S value was an
+extreme value in the current sampling (i.e., more S values should be
+assessed to know if a different S value will better this one)}
 }
 \value{
 data.table with all selection information
@@ -66,5 +93,11 @@ data.table with all selection information
 Selects candidate and best S and performs QC of these selections
 }
 \details{
-HME (harmonic mean estimator) is always available and, in our simulations, works well for this specific purpose despite the well-known problems it has for model selection overall. SS and PS are the preferred methods but phyfum runs with MLE (marginal likelihood estimation) activated are required and they take at least twice the time to run. This function goes down the preference list until finding a method for which it has lML data for all the S to work and uses that one.
+HME (harmonic mean estimator) is always available and, in our
+simulations, works well for this specific purpose despite the well-known
+problems it has for model selection overall. SS and PS are the preferred
+methods but phyfum runs with MLE (marginal likelihood estimation) activated
+are required and they take at least twice the time to run. This function
+goes down the preference list until finding a method for which it has lML
+data for all the S to work and uses that one.
 }

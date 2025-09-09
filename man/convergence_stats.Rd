@@ -7,16 +7,19 @@
 convergence_stats(stan_table, cred_mass = 0.95)
 }
 \arguments{
-\item{stan_table}{MCMC data for one parameter, with as many columns as independent chains of same length}
+\item{stan_table}{MCMC data for one parameter, with as many columns as
+independent chains of same length}
 
 \item{cred_mass}{mass of the selected high posterior density interval (HDI)}
 }
 \value{
-data.table with a row per parameter and colums for Rhat, ESS-bulk, and ESS-tail, median, mean, and HDI interval (HDILower and HDIUpper)
+data.table with a row per parameter and colums for Rhat, ESS-bulk,
+and ESS-tail, median, mean, and HDI interval (HDILower and HDIUpper)
 }
 \description{
 Generates a table with convergence statistics
 }
 \seealso{
-\code{\link[rstan:Rhat]{rstan::Rhat()}} \code{\link[rstan:Rhat]{rstan::ess_bulk()}} \code{\link[rstan:Rhat]{rstan::ess_tail()}} \code{\link[HDInterval:hdi]{HDInterval::hdi()}}
+\code{\link[rstan:Rhat]{rstan::Rhat()}} \code{\link[rstan:Rhat]{rstan::ess_bulk()}} \code{\link[rstan:Rhat]{rstan::ess_tail()}}
+\code{\link[HDInterval:hdi]{HDInterval::hdi()}}
 }

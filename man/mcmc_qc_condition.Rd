@@ -89,7 +89,8 @@ be created before fixing the file}
   }}
 }
 \value{
-list with data.tables with all = convergence statistics, problematic = parameter with problems, MLE = mle estimation table
+list with data.tables with all = convergence statistics, problematic
+= parameter with problems, MLE = mle estimation table
 }
 \description{
 This function generates plots and tables to aid assessing phyfum's mixing and

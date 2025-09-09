@@ -29,6 +29,7 @@ removed (True) or flagged (False, Default)}
   \describe{
     \item{\code{tree_i}}{pre-specified element of tree_list that should be used as
 reference tree. If NULL (default) it is sampled at random from tree_dist}
+    \item{\code{focal_tree}}{focal tree to use instead of sampling it from the chain}
   }}
 }
 \value{

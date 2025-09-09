@@ -59,6 +59,10 @@ fix_nexus <- function(file,backup = TRUE) {
 
 #RWTY integration
 #################
+
+#Parsing input traces
+#######################################
+
 #' Ensures that chains are in the expected format
 #'
 #' @param chains MCMC data. List of [rwty::load.trees()] values
@@ -72,6 +76,68 @@ ensure_list_chains <- function(chains){
   if(is.null(names(chains)))
     data.table::setattr(chains,"name",seq(1,length(chains)))
   return(chains)
+}
+
+#' Removes burnin states in RWTY chain lists
+#'
+#' @inheritParams ensure_list_chains
+#' @param burnin_p Proportion of MCMC samples to discard as burnin
+#'
+#' @returns list of RWTY chains with burnin samples removed
+#' @keywords internal
+
+remove_burnin <- function(chains,burnin_p) {
+  chains <- ensure_list_chains(chains)
+  return(lapply(chains,function(chain){
+    last_sample <- length(chain$trees)
+    first_sample <- round(burnin_p*last_sample)
+    chain$trees <- chain$trees[seq.int(from=first_sample,to=last_sample)]
+    chain$ptable <- chain$ptable[seq.int(from=first_sample,to=last_sample),]
+    chain
+    }))
+}
+
+#' Load phyfum posterior samples
+#'
+#' @param trees_files list of phyfum's output .trees files (one per independent
+#'   run)
+#' @param log_files list of phyfum's output .log files (one per independent
+#'   run). If not used, this function will assume they have the same name and
+#'   location as their .trees counterparts
+#' @inheritParams remove_burnin
+#' @inheritDotParams fix_nexus backup
+#'
+#' @returns list of RWTY's chains
+#' @keywords internal
+
+load_traces <- function(trees_files, log_files=NULL, burnin_p=0, ...){
+  if(!all(file.exists(trees_files))) {
+    stop("ERROR: Not all input tree files exist. Problem files: ",paste(trees_files[!file.exists(trees_files)],collapse=", "))
+  }
+  if(is.null(log_files)){
+    log_files <- gsub(pattern = ".trees",replacement = ".log",trees_files)
+  }
+  if(!all(file.exists(log_files))) {
+    stop("ERROR: Not all input log files exist. Problem files: ",paste(log_files[!file.exists(log_files)],collapse=", "))
+  }
+  if(length(trees_files) != length(log_files)) {
+    stop("ERROR: The trees and log input files are not paired properly.")
+  }
+
+  message("Loading traces...")
+  sink(nullfile()) #shut up!
+  chains <- invisible(lapply(seq_along(trees_files),FUN=function(i_file){
+    fix_nexus(trees_files[i_file],...)
+    chain <- rwty::load.trees(trees_files[i_file],format="BEAST",logfile = log_files[i_file]);
+    chain}))
+  sink()
+  message("Done\n")
+
+  if(!is.null(burnin_p)&&burnin_p!=0){
+    return(remove_burnin(chains,burnin_p))
+  } else {
+    return(chains)
+  }
 }
 
 #' Obtains the parameter trace from from multiple RWTY MCMC samples
@@ -137,7 +203,7 @@ update_ptable <- function(chains,thedata,exclude_cols=c("chain")){
 #' @returns new chains
 #' @keywords internal
 
-remove_burnin <- function(chains) {
+remove_marked_burnin <- function(chains) {
   for(ichain in 1:length(chains)){
     if("burnin" %in% colnames(chains[[ichain]]$ptable)){
       is_burnin <- chains[[ichain]]$ptable$burnin
@@ -167,12 +233,12 @@ merge_traces <- function(chains,burnin_p=0){
   returnsChain$trees <- do.call(c,lapply(chains,function(chain){
     last_sample <- length(chain$trees)
     first_sample <- round(burnin_p*last_sample)
-    chain$trees[first_sample:last_sample]
+    chain$trees[seq.int(from=first_sample,to=last_sample)]
   }))
   returnsChain$ptable <- do.call(rbind,lapply(chains,function(chain){
     last_sample <- nrow(chain$ptable)
     first_sample <- round(burnin_p*last_sample)
-    chain$ptable[first_sample:last_sample,]
+    chain$ptable[seq.int(from=first_sample,to=last_sample),]
   }))
   return(returnsChain)
 }
@@ -187,17 +253,25 @@ merge_traces <- function(chains,burnin_p=0){
 #'   focal tree ("PD" or "RF")
 #' @param tree_i pre-specified element of tree_list that should be used as
 #'   reference tree. If NULL (default) it is sampled at random from tree_dist
+#' @param focal_tree focal tree to use instead of sampling it from the chain
 #'
 #' @returns array of tree distances
 #' @keywords internal
 #' @seealso [generate_tree_traces()] [tree_convergence_stats()]
 
-generate_tree_trace_reftree <- function (tree_list, treedist = c("PD","RF"), tree_i = NULL) {
+generate_tree_trace_reftree <- function (tree_list,
+                                         treedist = c("PD","RF"),
+                                         tree_i = NULL,
+                                         focal_tree = NULL) {
   treedist <- match.arg(treedist)
-  if (is.null(tree_i)){
-    tree_i <- sample(1:length(tree_list), 1)
+  if(!is.null(focal_tree)){
+    distances <- rwty:::tree.distances(tree_list, treedist = treedist, focal.tree = focal_tree)
+  } else {
+    if (is.null(tree_i)){
+      tree_i <- sample(1:length(tree_list), 1)
+    }
+    distances <- rwty:::tree.distances(tree_list, tree_i, treedist = treedist)
   }
-  distances <- rwty:::tree.distances(tree_list, tree_i, treedist = treedist)
   return(distances)
 }
 
@@ -210,7 +284,7 @@ generate_tree_trace_reftree <- function (tree_list, treedist = c("PD","RF"), tre
 #'
 #' @inheritParams extract_ptable
 #' @inheritParams generate_tree_trace_reftree
-#' @inheritDotParams generate_tree_trace_reftree tree_i
+#' @inheritDotParams generate_tree_trace_reftree tree_i focal_tree
 #'
 #' @returns data.table (long format) with a row per MCMC sample and columns for
 #'   treedistance and chain
@@ -219,6 +293,7 @@ generate_tree_trace_reftree <- function (tree_list, treedist = c("PD","RF"), tre
 
 generate_tree_traces <- function(chains,burnin_p = 0, treedist = "PD", remove_burnin = TRUE,...) {
   chains <- ensure_list_chains(chains)
+
   ellipsis_args <- list(...)
 
   result_table <- data.table::rbindlist(lapply(chains,function(chain,burnin_p,remove_burnin){
@@ -229,7 +304,7 @@ generate_tree_traces <- function(chains,burnin_p = 0, treedist = "PD", remove_bu
         if(!is.null(ellipsis_args[["tree_i"]]))
           warning("When using a fixed tree_i in generate_tree_traces with burnin_p > 0 and remove_burnin=T, tree_i corresponds to the tree number after burnin has been removed")
 
-      this_data <- data.table::data.table(treedistance=generate_tree_trace_reftree(chain$trees[first_sample:last_sample],treedist = treedist,...)$topological.distance, treedist = treedist)
+      this_data <- data.table::data.table(treedistance=generate_tree_trace_reftree(chain$trees[seq.int(from=first_sample,to=last_sample)],treedist = treedist,...)$topological.distance, treedist = treedist)
       this_data[,`:=`(burnin=FALSE)]
     } else {
       this_data <- data.table::data.table(treedistance=generate_tree_trace_reftree(chain$trees,treedist = treedist,...)$topological.distance, treedist = treedist)
@@ -248,17 +323,19 @@ generate_tree_traces <- function(chains,burnin_p = 0, treedist = "PD", remove_bu
 
 }
 
-
 #Convergence
 ############
 
 #' Generates a table with convergence statistics
 #'
-#' @param stan_table MCMC data for one parameter, with as many columns as independent chains of same length
+#' @param stan_table MCMC data for one parameter, with as many columns as
+#'   independent chains of same length
 #' @param cred_mass mass of the selected high posterior density interval (HDI)
 #'
-#' @returns data.table with a row per parameter and colums for Rhat, ESS-bulk, and ESS-tail, median, mean, and HDI interval (HDILower and HDIUpper)
-#' @seealso [rstan::Rhat()] [rstan::ess_bulk()] [rstan::ess_tail()] [HDInterval::hdi()]
+#' @returns data.table with a row per parameter and colums for Rhat, ESS-bulk,
+#'   and ESS-tail, median, mean, and HDI interval (HDILower and HDIUpper)
+#' @seealso [rstan::Rhat()] [rstan::ess_bulk()] [rstan::ess_tail()]
+#'   [HDInterval::hdi()]
 #' @export
 
 convergence_stats <- function(stan_table,cred_mass = 0.95) {
@@ -310,32 +387,41 @@ tree_convergence_stats <- function(chains,
   }
   treedist <- match.arg(treedist)
 
-  merged_chain <- ensure_list_chains(merge_traces(chains,burnin_p = burnin_p))
-  tree_is <- sample(seq(1,length(merged_chain[[1]]$trees)),size = n_focal_trees)
-  names(tree_is) <- tree_is
+  merged_chain <- merge_traces(chains,burnin_p = burnin_p)
+  focal_trees <- sample(merged_chain$trees,size = n_focal_trees)
 
-  infun <- function(tree_i,chain,treedist,...){
-    convergence_stats(generate_tree_traces(chain,treedist = treedist, tree_i = tree_i,...)[,.(treedistance)],cred_mass = cred_mass)
+  # infun <- function(tree_i,chain,treedist,...){
+  #   convergence_stats(generate_tree_traces(chains,treedist = treedist, tree_i = tree_i,...)[,.(treedistance)],cred_mass = cred_mass)
+  # }
+
+  infun <- function(i,focal_trees,chains,treedist,...){
+    convergence_stats(data.table::dcast(generate_tree_traces(chains = chains,treedist = treedist, focal_tree = focal_trees[i], remove_burnin = T,...)[,idx := seq_len(.N), by=chain],idx~chain,value.var = "treedistance")[,-1][,c(list(.SD),list(complete=stats::complete.cases(.SD)))][complete==T,][,`:=`(complete=NULL)],cred_mass = cred_mass)
   }
 
   #WARNING: infun uses mclapply if rwrt.processors > 1. A thread explosion can easily happen here
-  replicated_convergence_stats <- data.table::rbindlist(slapply(tree_is, infun, chain = merged_chain, cl = cl,
-                                                                burnin_p = 0,
-                                                                treedist = treedist),idcol = "tree_i")
+  replicated_convergence_stats <- data.table::rbindlist(slapply(seq_along(focal_trees), infun,
+                                                                focal_trees = focal_trees,
+                                                                chains = chains,
+                                                                burnin_p = burnin_p,
+                                                                treedist = treedist,
+                                                                cl = cl),idcol = "focal_tree_i")
 
-  result_table <- replicated_convergence_stats[,lapply(.SD,mean),.SDcols=names(replicated_convergence_stats)[!names(replicated_convergence_stats)%in%c("tree_i")]]
+  result_table <- replicated_convergence_stats[,lapply(.SD,mean,na.rm=T),.SDcols=names(replicated_convergence_stats)[!names(replicated_convergence_stats)%in%c("focal_tree_i")]]
   result_table[,`:=`(chain = "ALL")]
 
   if(isTRUE(by_chain) && length(chains)>1) {
     result_table_by_chain <- data.table::rbindlist(suppressWarnings(lapply(chains,FUN = function(chain){
-      tree_is <- sample(seq(1,round(length(chain$trees)*(1-burnin_p))),size = n_focal_trees)
+      focal_trees <- sample(chain$trees[seq.int(from=round(length(chain$trees)*(burnin_p)),to=length(chain$trees))],size = n_focal_trees)
 
-      replicated_convergence_stats <- data.table::rbindlist(slapply(tree_is, infun, chain = ensure_list_chains(chain), cl = cl,
+      #TODO working here
+      replicated_convergence_stats <- data.table::rbindlist(slapply(seq_along(focal_trees), infun,
+                                                                    focal_trees = focal_trees,
+                                                                    chains = ensure_list_chains(chain),
                                                                     burnin_p = burnin_p,
                                                                     treedist = treedist,
-                                                                    remove_burnin = TRUE),idcol = "tree_i")
+                                                                    cl = cl),idcol = "focal_tree_i")
 
-      this_chain_stats <- replicated_convergence_stats[,lapply(.SD,mean),.SDcols=names(replicated_convergence_stats)[!names(replicated_convergence_stats)%in%c("tree_i")]]
+      this_chain_stats <- replicated_convergence_stats[,lapply(.SD,mean,na.rm=T),.SDcols=names(replicated_convergence_stats)[!names(replicated_convergence_stats)%in%c("focal_tree_i")]]
       return(this_chain_stats)
     })),idcol="chain")
     result_table <- cbind(result_table,result_table_by_chain[,.(medianPCV=stats::sd(medianP)/mean(medianP),meanPCV=stats::sd(meanP)/mean(meanP))])
@@ -375,7 +461,7 @@ param_convergence_stats <- function(thedata,
   }
 
   infun <- function(this_param,thedata) {
-    convergence_stats(data.table::dcast(thedata[,c("state",this_param,"chain"),with=FALSE],state~chain,value.var = this_param)[,-1], cred_mass = cred_mass)[,`:=`(param = this_param)]
+    convergence_stats(data.table::dcast(thedata[order(chain,state),][,idx := seq_len(.N), by=chain],idx~chain,value.var = this_param)[,-1][,c(list(.SD),list(complete=stats::complete.cases(.SD)))][complete==T,][,`:=`(complete=NULL)], cred_mass = cred_mass)[,`:=`(param = this_param)]
   }
 
   result_table <- data.table::rbindlist(slapply(params,infun,thedata = thedata,cl=cl))
@@ -482,11 +568,7 @@ write_continuous_parameter_plots <- function(thedata,params,out_dir,out_name,ndi
 #'   generator is used instead of the default. This allows mclapply to be
 #'   reproducible.
 #'
-#' @param trees_files list of phyfum's output .trees files (one per independent
-#'   run)
-#' @param log_files list of phyfum's output .log files (one per independent
-#'   run). If not used, this function will assume they have the same name and
-#'   location as their .trees counterparts
+#' @inheritParams load_traces
 #' @param out_dir directory for tabular outputs
 #' @param plot_dir directory for graphical outputs
 #' @param burnin_p proportion of input traces to be discarded as burnin
@@ -519,7 +601,8 @@ write_continuous_parameter_plots <- function(thedata,params,out_dir,out_name,ndi
 #'   Otherwise, it fixes the number of cores that rwty and data.table will use.
 #'   They never run in parallel so both can use the maximum number of cores
 #' @inheritDotParams fix_nexus backup
-#' @returns list with data.tables with all = convergence statistics, problematic = parameter with problems, MLE = mle estimation table
+#' @returns list with data.tables with all = convergence statistics, problematic
+#'   = parameter with problems, MLE = mle estimation table
 #' @export
 
 mcmc_qc_condition <- function(trees_files,
@@ -557,29 +640,7 @@ mcmc_qc_condition <- function(trees_files,
   dir.create(out_dir,showWarnings = FALSE,recursive = TRUE)
   dir.create(plot_dir,showWarnings = FALSE,recursive = TRUE)
 
-  #Parsing input traces
-  #######################################
-  if(!all(file.exists(trees_files))) {
-    stop("ERROR: Not all input tree files exist. Problem files: ",paste(trees_files[!file.exists(trees_files)],collapse=", "))
-  }
-  if(is.null(log_files)){
-    log_files <- gsub(pattern = ".trees",replacement = ".log",trees_files)
-  }
-  if(!all(file.exists(log_files))) {
-    stop("ERROR: Not all input log files exist. Problem files: ",paste(log_files[!file.exists(log_files)],collapse=", "))
-  }
-  if(length(trees_files) != length(log_files)) {
-    stop("ERROR: The trees and log input files are not paired properly.")
-  }
-
-  message("Loading traces...")
-  sink(nullfile()) #shut up!
-  chains <- invisible(lapply(1:length(trees_files),FUN=function(i_file){
-    fix_nexus(trees_files[i_file],...)
-    chain <- rwty::load.trees(trees_files[i_file],format="BEAST",logfile = log_files[i_file]);
-    chain}))
-  sink()
-  message("Done\n")
+  chains <- load_traces(trees_files,log_files)
 
   nSamples <- unique(sapply(chains,FUN=function(x){length(x$trees)}))
 
@@ -659,7 +720,7 @@ mcmc_qc_condition <- function(trees_files,
   if(!is.null(rwty_plots_suffix) || !is.null(correlation_plots_suffix)){
     message("Generating RWTY plots...")
     sink(nullfile())
-    rwty_plots <- suppressWarnings(invisible(rwty::analyze.rwty(chains = remove_burnin(chains),
+    rwty_plots <- suppressWarnings(invisible(rwty::analyze.rwty(chains = remove_marked_burnin(chains),
                                      fill.color = 'posterior',
                                      params = colnames(chains[[1]]$ptable)[colnames(chains[[1]]$ptable) %in% continuous_convergence[,unique(param)]])))
     sink()
@@ -865,13 +926,17 @@ mcmc_qc <- function(file_dir,
 
 #' Gather and summarize MCMC QC per experiment
 #'
-#' This function collects and summarizes the results from [mcmc_qc_condition()]. It is an alternative to [mcmc_qc()] when [mcmc_qc_condition()] is run in parallel using multiple computers (typicaly an HPC cluster).
+#' This function collects and summarizes the results from [mcmc_qc_condition()].
+#' It is an alternative to [mcmc_qc()] when [mcmc_qc_condition()] is run in
+#' parallel using multiple computers (typicaly an HPC cluster).
 #'
 #' @details all .trees files within the objective directory will be analized.
 #'   Files with the same name will be considered independent phyfum runs under
 #'   the same conditions.
 #'
-#' @param out_dir output directory where all the [mcmc_qc_condition()] outputs are located, which will also be where the output of this function will be located (as [mcmc_qc()])
+#' @param out_dir output directory where all the [mcmc_qc_condition()] outputs
+#'   are located, which will also be where the output of this function will be
+#'   located (as [mcmc_qc()])
 #' @inheritParams mcmc_qc_condition
 #' @inherit mcmc_qc params return
 #'
