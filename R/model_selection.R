@@ -79,6 +79,8 @@ model_selection <- function(in_dir,
                             extreme_valid_output_suffix = "extremeValidS.csv"
                             ) {
 
+  min_lbf <- log(min_bf)
+
   method <- match.arg(method,several.ok = T) #sorted by preference
 
   if(is.null(plot_dir))
@@ -98,18 +100,18 @@ model_selection <- function(in_dir,
   all_mle_data[,`:=`(patient=gsub(basename_regex,"",get(cond_col)),S=as.numeric(gsub(n_cells_regex,"\\1",get(cond_col))))]
 
   #Model selection
-  all_mle_data_with_selection_stats <- data.table::rbindlist(lapply(split(all_mle_data,by="patient"),function(this_data,min_bf){
+  all_mle_data_with_selection_stats <- data.table::rbindlist(lapply(split(all_mle_data,by="patient"),function(this_data,min_lbf){
     n_S <- length(this_data[,unique(S)])
     method_analysis <- this_data[,.N,by=method][,`:=`(valid_method=N==n_S)][method,.SD,on="method"][valid_method==T,`:=`(method_order=.I)]
     new_data <- data.table::copy(this_data)
     new_data[method=="AICm",`:=`(lML=lML*-1)] #AICm's lML is the AICm not the lML and thus needs to be inverted for selection. Additionally, we can't use BFs with it.
     new_data <- new_data[order(-lML),.(file,get(cond_col),best=lML==data.table::first(lML),
-                                       lML,S,selected=max(lML)-lML<=min_bf,min_S=min(S),max_S=max(S),
+                                       lML,S,selected=max(lML)-lML<=min_lbf,min_S=min(S),max_S=max(S),
                                        extreme_best=lML==data.table::first(lML)&(S==max(S)|S==min(S)),
-                                       extreme_valid=max(lML)-lML<=min_bf&(S==max(S)|S==min(S))),by=method]
+                                       extreme_valid=max(lML)-lML<=min_lbf&(S==max(S)|S==min(S))),by=method]
     new_data[method=="AICm",`:=`(lML=lML*-1,selected=NA)]
     return(data.table::merge.data.table(new_data,method_analysis,by = "method",all.x = TRUE))
-  },min_bf=min_bf),idcol = "patient")
+  },min_lbf=min_lbf),idcol = "patient")
 
   #Output
   dir.create(out_dir,recursive = T,showWarnings = F)
@@ -178,7 +180,7 @@ model_selection <- function(in_dir,
   if(!is.null(plot_output_suffix)){
     for(this_patient in all_mle_data_with_selection_stats[,unique(patient)]){
 
-      these_thresholds <- all_mle_data_with_selection_stats[patient==this_patient & method!="AICm",.(minY=max(lML)-min_bf),by=method]
+      these_thresholds <- all_mle_data_with_selection_stats[patient==this_patient & method!="AICm",.(minY=max(lML)-min_lbf),by=method]
 
       this_patient_plot <- ggplot2::ggplot(all_mle_data_with_selection_stats[patient==this_patient & method!="AICm",],ggplot2::aes(x=S,y=lML,color=method))+
         ggplot2::geom_point(alpha=0.8) +
